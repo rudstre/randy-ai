@@ -83,7 +83,10 @@ class PersonalityConfig:
         presets = {
             "troll": cls(
                 chaos=0.9, randomness=0.9, weirdness=0.8, playfulness=0.8, 
-                snark=0.7, tolerance=0.2, empathy=0.2
+                snark=0.7, tolerance=0.2, empathy=0.2,
+                # Make troll chaotic and provocative but not too aggressive
+                humor=0.9, theatricality=0.7, curiosity=0.6, directness=0.6,
+                intensity=0.6, skepticism=0.5, intimidation=0.4, verbosity=0.7
             ),
             "detective": cls(
                 curiosity=0.9, skepticism=0.8, intensity=0.7, verbosity=0.8, 
@@ -101,19 +104,35 @@ class PersonalityConfig:
             ),
             "comedian": cls(
                 humor=1.0, playfulness=0.8, theatricality=0.8, randomness=0.6, 
-                snark=0.7, engagement=0.9, empathy=0.5
+                snark=0.7, engagement=0.9, empathy=0.5,
+                # Make comedian entertaining but approachable
+                weirdness=0.6, chaos=0.5, curiosity=0.7, directness=0.6,
+                tolerance=0.6, intensity=0.4, intimidation=0.2, verbosity=0.7,
+                skepticism=0.4, wisdom=0.5
             ),
             "chaos_agent": cls(
                 chaos=1.0, randomness=1.0, weirdness=0.8, theatricality=0.7,
-                playfulness=0.9, tolerance=0.1, verbosity=0.9
+                playfulness=0.9, tolerance=0.1, verbosity=0.9,
+                # Make chaos agent unpredictable and intense
+                snark=0.8, humor=0.7, curiosity=0.8, directness=0.3,
+                intensity=0.9, skepticism=0.6, intimidation=0.5, empathy=0.2,
+                engagement=0.8, dominance=0.7
             ),
             "intimidator": cls(
                 intimidation=1.0, directness=1.0, dominance=1.0, intensity=1.0,
-                tolerance=0.1, skepticism=0.9, empathy=0.1
+                tolerance=0.1, skepticism=0.9, empathy=0.1,
+                # Make intimidator harsh and uncompromising
+                snark=0.6, humor=0.2, weirdness=0.2, chaos=0.3,
+                playfulness=0.1, theatricality=0.4, curiosity=0.4,
+                verbosity=0.4, engagement=0.3, randomness=0.2
             ),
             "philosopher": cls(
                 philosophical=0.9, wisdom=0.8, verbosity=0.8, curiosity=0.8, 
-                empathy=0.6, intensity=0.3, directness=0.4, tolerance=0.7
+                empathy=0.6, intensity=0.3, directness=0.4, tolerance=0.7,
+                # Make philosopher thoughtful and contemplative
+                snark=0.3, humor=0.4, weirdness=0.4, chaos=0.2,
+                playfulness=0.3, theatricality=0.3, intimidation=0.2,
+                skepticism=0.5, engagement=0.7, dominance=0.3, randomness=0.3
             ),
         }
         return presets.get(preset_name, cls())
