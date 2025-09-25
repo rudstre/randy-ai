@@ -166,7 +166,7 @@ class InterviewOrchestrator:
         self.decision_engine = InterviewDecisionEngine(self.llm_client, self.prompt_engine)
     
     def run(self,
-            initial_question: str = "Hi! Please introduce yourself and tell me a bit about what you enjoy.",
+            initial_question: Optional[str] = None,
             per_turn_seconds: float = DEFAULT_PER_TURN_SECONDS) -> InterviewResult:
         """
         Run the complete interview process.
@@ -185,7 +185,7 @@ class InterviewOrchestrator:
         state = InterviewState(conversation_id=conversation_id)
         turns: List[Turn] = []
         remaining_questions = self.max_questions
-        current_question = initial_question
+        current_question = initial_question or self.prompt_engine.generate_opening_question()
         final_payload: Optional[Dict[str, Any]] = None
         
         # Emit interview started event

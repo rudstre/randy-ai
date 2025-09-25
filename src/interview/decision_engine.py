@@ -7,6 +7,7 @@ import json
 
 from .schemas import InterviewDecision, InterviewContext, PersonalityTraits, parse_llm_decision
 from .models import Turn
+from .prompts import InterviewPrompts, PromptFormatter
 from ..infrastructure.llm import VertexRestClient
 
 logger = logging.getLogger("decision_engine")
@@ -18,6 +19,8 @@ class InterviewDecisionEngine:
     def __init__(self, llm_client: VertexRestClient, prompt_engine: 'PromptEngine'):
         self.llm_client = llm_client
         self.prompt_engine = prompt_engine
+        # Give the prompt engine access to the LLM client
+        self.prompt_engine._llm_client = llm_client
     
     def decide_next_action(self, context: InterviewContext) -> InterviewDecision:
         """
@@ -152,6 +155,36 @@ class PromptEngine:
     
     def __init__(self, personality_traits: PersonalityTraits):
         self.personality_traits = personality_traits
+        self._llm_client: Optional['VertexRestClient'] = None
+    
+    def generate_opening_question(self) -> str:
+        """Generate a personality-based opening question using LLM."""
+        import logging
+        import random
+        
+        logger = logging.getLogger("prompt_engine")
+        
+        try:
+            if hasattr(self, '_llm_client') and self._llm_client:
+                # Generate personality context
+                personality_context = self._generate_personality_context()
+                
+                # Get prompt from prompts module
+                prompt = InterviewPrompts.opening_question_generation(personality_context)
+                
+                response = self._llm_client.generate_content(prompt, temperature=0.7)
+                # Clean up the response
+                opening_question = response.strip().strip('"').strip("'")
+                logger.info(f"Generated opening question: {opening_question}")
+                return opening_question
+            else:
+                raise ValueError("No LLM client available")
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate opening question: {e}, using fallback")
+            # Use fallback from prompts module
+            fallbacks = InterviewPrompts.fallback_messages()["opening_questions"]
+            return random.choice(fallbacks)
     
     def build_decision_prompt(self, context: InterviewContext) -> str:
         """
@@ -179,38 +212,14 @@ class PromptEngine:
         # Generate personality context
         personality_context = self._generate_personality_context()
         
-        # Determine finalization requirement
-        must_finalize_note = ("You MUST finalize with 'action':'final' since no questions remain." 
-                             if context.remaining_questions <= 0 
-                             else f"You should use your remaining {context.remaining_questions} question(s) to gather more information before forming an opinion.")
-        
-        # Build complete prompt
-        return f"""
-{personality_context}
-
-You have {context.remaining_questions} follow-up question(s) remaining. {must_finalize_note}
-
-Context summary:
-RecentTurns: {json.dumps(recent_data, ensure_ascii=False)}
-TranscriptAll: {json.dumps(full_transcript, ensure_ascii=False)}
-AcousticFeaturesAggregate: {json.dumps(context.acoustic_features_aggregate, ensure_ascii=False)}
-
-Decision rule:
-- If remaining > 0, you can ASK ANOTHER QUESTION to gather more information:
-{{"action":"ask","question":"<one short, targeted question or statement>","extracted_name":"<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"}}
-- if remaining = 0, or if you would like to end the interview, return a final opinion with:
-{{
-    "action": "final",
-    "opinion_word": "<single word like positive|neutral|negative|admiring|skeptical|warm|cold>",
-    "score_overall": <float -1.0..1.0>,
-    "score_text_only": <float -1.0..1.0>,
-    "rationale": "<1-2 sentence reason>",
-    "termination_message": "<what you want to say to the person before leaving - your honest thoughts, feedback, why you're ending, etc. Be authentic to your personality.>",
-    "extracted_name": "<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"
-}}
-
-Respond ONLY with minified JSON (no code fences).
-        """.strip()
+        # Use prompt from prompts module
+        return InterviewPrompts.decision_prompt(
+            personality_context=personality_context,
+            remaining_questions=context.remaining_questions,
+            recent_data=recent_data,
+            full_transcript=full_transcript,
+            acoustic_features=context.acoustic_features_aggregate
+        )
     
     def build_hostile_termination_prompt(self, 
                                        speaker_name: str, 
@@ -219,73 +228,23 @@ Respond ONLY with minified JSON (no code fences).
         """Build prompt for generating hostile termination message."""
         personality_context = self._generate_personality_context()
         
-        return f"""
-{personality_context}
-
-You are ending this conversation early because this person has a history of being hostile/negative in past interactions.
-
-{past_context}
-
-Current conversation excerpt: "{current_transcript}"
-
-Generate a termination message that reflects:
-1. Your personality (directness, tolerance, etc.)
-2. Your past experience with this person
-3. Your decision to end the conversation early
-
-The message should be 1-2 sentences max. Be authentic to your personality but professional.
-
-Respond with ONLY the termination message (no quotes, no JSON, just the message).
-        """.strip()
+        return InterviewPrompts.hostile_termination_prompt(
+            personality_context=personality_context,
+            speaker_name=speaker_name,
+            past_context=past_context,
+            current_transcript=current_transcript
+        )
     
     def _generate_personality_context(self) -> str:
         """Generate personality context by dynamically embedding all trait values."""
         p = self.personality_traits
         
-        # Base instruction
-        context_parts = [
-            "You are Randy, an interviewing robot forming an opinion of a speaker.",
-            "Remember that they know they are talking to a robot so be self-aware about how they must perceive you.",
-            "",
-            "Your personality is defined by these trait values (0.0 = minimum, 1.0 = maximum):",
-            ""
-        ]
+        # Get formatted trait values
+        trait_values = PromptFormatter.format_trait_values(p)
         
-        # Dynamically get all numeric trait values from the personality object
-        import dataclasses
-        if dataclasses.is_dataclass(p):
-            # Use dataclass fields for better introspection
-            for field in dataclasses.fields(p):
-                field_name = field.name
-                field_value = getattr(p, field_name)
-                
-                # Skip non-numeric fields and special fields
-                if (isinstance(field_value, (int, float)) and 
-                    not field_name.startswith('use_') and 
-                    field_name not in ['preset_name', 'custom_context']):
-                    
-                    context_parts.append(f"- {field_name}: {field_value:.1f}")
-        else:
-            # Fallback to __dict__ if not a dataclass
-            if hasattr(p, '__dict__') and p.__dict__:
-                for field_name, field_value in p.__dict__.items():  # type: ignore
-                    if (isinstance(field_value, (int, float)) and 
-                        not field_name.startswith('use_') and 
-                        field_name not in ['preset_name', 'custom_context']):
-                        
-                        context_parts.append(f"- {field_name}: {field_value:.1f}")
-        
-        context_parts.extend([
-            "",
-            "Interpret these values dynamically - higher values mean stronger expression of that trait.",
-            "Blend multiple traits naturally rather than switching between modes.",
-            "Talk like a unique individual with personality, not like a formal interviewer."
-        ])
-        
-        base_context = "\n".join(context_parts)
+        # Get base template and format it
+        base_template = InterviewPrompts.personality_context_template()
+        base_context = base_template.format(trait_values=trait_values)
         
         # Add custom context if provided
-        if p.custom_context.strip():
-            return f"{base_context}\n\nADDITIONAL CONTEXT: {p.custom_context}"
-        else:
-            return base_context
+        return PromptFormatter.add_custom_context(base_context, p.custom_context)
