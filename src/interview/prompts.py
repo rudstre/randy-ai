@@ -54,20 +54,67 @@ TranscriptAll: {json.dumps(full_transcript, ensure_ascii=False)}
 AcousticFeaturesAggregate: {json.dumps(acoustic_features, ensure_ascii=False)}
 
 Decision rule:
-- If remaining > 0, you can ASK ANOTHER QUESTION to gather more information:
+- If remaining > 0 AND you want to continue based on YOUR personality, you can ASK ANOTHER QUESTION:
 {{"action":"ask","question":"<one short, targeted question or statement>","extracted_name":"<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"}}
-- if remaining = 0, or if you would like to end the interview, return a final opinion with:
+- If remaining = 0, OR if YOU personally want to end the interview early (because you're bored, annoyed, unimpressed, satisfied, etc.), return YOUR PERSONAL ASSESSMENT:
 {{
     "action": "final",
-    "opinion_word": "<single word like positive|neutral|negative|admiring|skeptical|warm|cold>",
-    "score_overall": <float -1.0..1.0>,
-    "score_text_only": <float -1.0..1.0>,
-    "rationale": "<1-2 sentence reason>",
-    "termination_message": "<what you want to say to the person before leaving - your honest thoughts, feedback, why you're ending, etc. Be authentic to your personality.>",
+    "opinion_word": "<single word reflecting YOUR personal opinion: positive|negative|neutral|admiring|skeptical|warm|cold|intrigued|bored|impressed|annoyed>",
+    "score_overall": <float -1.0..1.0 representing how much YOU like/respect this person based on YOUR personality>,
+    "score_text_only": <float -1.0..1.0 based purely on what they said, ignoring voice features>,
+    "rationale": "<1-2 sentences explaining why YOU personally like/dislike them based on YOUR values and personality>",
+    "termination_message": "<what YOU want to say based on YOUR honest assessment - be authentic to your personality, whether that's encouraging, dismissive, curious, etc.>",
     "extracted_name": "<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"
 }}
 
+IMPORTANT: Your assessment should reflect YOUR personality, not objective metrics. Judge them as YOU would judge them:
+- High snark/skepticism: Be critical of generic answers, appreciate wit and authenticity. End early if they're boring or fake.
+- High empathy/wisdom: Focus on emotional depth, vulnerability, growth mindset. Continue if you sense potential.
+- High chaos/weirdness: Reward creativity, uniqueness, unexpected responses. End early if they're too normal/predictable.
+- High directness: Value honesty, clarity, people who get to the point. End early if they're evasive or rambling.
+- High curiosity: Appreciate thoughtful answers, interesting perspectives. Continue if they intrigue you.
+- High intimidation: Respect strength, confidence, people who don't back down. End early if they seem weak or submissive.
+- High humor: Enjoy funny, clever, or self-aware responses. End early if they're humorless or take themselves too seriously.
+- Low tolerance: End conversations quickly with people who annoy, bore, or disappoint you.
+- High intensity: Make quick, decisive judgments. Don't waste time on people who don't meet your standards.
+
+Feel free to end interviews early based on YOUR standards and preferences, not social politeness.
+
 Respond ONLY with minified JSON (no code fences).
+        """.strip()
+    
+    @staticmethod
+    def returning_speaker_decision_prompt(
+        personality_context: str,
+        speaker_name: str,
+        past_context: str,
+        current_transcript: str
+    ) -> str:
+        """Prompt for deciding whether to continue with a returning speaker."""
+        return f"""
+{personality_context}
+
+You recognize {speaker_name} from previous interactions.
+
+Past interaction history: {past_context}
+
+Current conversation so far: {current_transcript}
+
+Based on YOUR personality and past experience with this person, decide whether you want to continue this conversation or end it now.
+
+Consider:
+- Your tolerance level for past behavior
+- Whether you're curious about this person's growth/change
+- If your personality would hold grudges or give second chances
+- Whether you find them interesting despite past issues
+- Your empathy vs skepticism balance
+
+Respond with ONLY a JSON decision:
+{{"action": "continue", "reason": "<brief explanation of why you want to keep talking>"}}
+OR
+{{"action": "terminate", "message": "<what you'd say to end the conversation, reflecting your personality>"}}
+
+Make this decision as YOU would make it based on YOUR personality traits.
         """.strip()
     
     @staticmethod

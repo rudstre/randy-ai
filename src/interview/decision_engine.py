@@ -54,6 +54,57 @@ class InterviewDecisionEngine:
             logger.error("LLM decision failed: %s", e)
             return self._create_fallback_decision(context)
     
+    def decide_returning_speaker_action(self,
+                                       speaker_id: str,
+                                       speaker_name: str,
+                                       current_turns: List[Turn],
+                                       voice_profile_manager) -> Dict[str, Any]:
+        """
+        Make a personality-driven decision about whether to continue with a returning speaker.
+        
+        Returns:
+            Dict with 'action' ('continue' or 'terminate') and either 'reason' or 'message'
+        """
+        try:
+            # Get speaker profile
+            profile = voice_profile_manager.profiles.get(speaker_id) if voice_profile_manager else None
+            
+            # Prepare context
+            past_context = PromptFormatter.build_speaker_history_context(profile, speaker_name)
+            current_transcript = " ".join([turn.transcript for turn in current_turns if turn.transcript])
+            
+            # Generate personality context
+            personality_context = self.prompt_engine._generate_personality_context()
+            
+            # Get decision prompt
+            prompt = InterviewPrompts.returning_speaker_decision_prompt(
+                personality_context, speaker_name, past_context, current_transcript
+            )
+            
+            # Get LLM decision
+            response = self.llm_client.generate_content(prompt, temperature=0.3)
+            
+            # Parse response
+            try:
+                decision = json.loads(response.strip())
+                logger.info(f"Returning speaker decision: {decision}")
+                return decision
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse returning speaker decision JSON: {response}")
+                # Default to continue with generic reason
+                return {
+                    "action": "continue",
+                    "reason": "I'll give you another chance to talk."
+                }
+            
+        except Exception as e:
+            logger.error("Failed to make returning speaker decision: %s", e)
+            # Default to continue on error
+            return {
+                "action": "continue", 
+                "reason": "Let's see what you have to say."
+            }
+    
     def generate_hostile_termination_message(self, 
                                            speaker_id: str, 
                                            current_turns: List[Turn],

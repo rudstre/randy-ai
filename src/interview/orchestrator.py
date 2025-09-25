@@ -212,7 +212,7 @@ class InterviewOrchestrator:
                 # Process turn
                 turn = self._process_turn(
                     current_question, turn_idx, conversation_dir, 
-                    per_turn_seconds, state
+                    per_turn_seconds, state, turns
                 )
                 turns.append(turn)
                 state.increment_turn()
@@ -285,7 +285,8 @@ class InterviewOrchestrator:
             self.conversation_manager.cleanup_conversation_workspace()
     
     def _process_turn(self, question: str, turn_idx: int, conversation_dir: str,
-                     per_turn_seconds: float, state: InterviewState) -> Turn:
+                     per_turn_seconds: float, state: InterviewState, 
+                     existing_turns: List[Turn]) -> Turn:
         """Process a single conversation turn."""
         try:
             # Capture and process audio
@@ -300,7 +301,7 @@ class InterviewOrchestrator:
             identification_result = self.person_service.identify_person_from_turn(turn, turn_idx)
             
             # Handle speaker identification results
-            self._handle_speaker_identification(identification_result, state)
+            self._handle_speaker_identification(identification_result, state, existing_turns)
             
             return turn
             
@@ -313,7 +314,7 @@ class InterviewOrchestrator:
             raise
     
     def _handle_speaker_identification(self, identification_result: Dict[str, Any], 
-                                     state: InterviewState):
+                                     state: InterviewState, current_turns: List[Turn]):
         """Handle speaker identification results and events."""
         person_id = identification_result.get("person_id")
         confidence = identification_result.get("confidence", 0.0)
@@ -340,20 +341,43 @@ class InterviewOrchestrator:
                     state.conversation_id or "unknown", time.time(), person_id, f"Speaker {person_id}"
                 ))
         
-        # Handle termination
-        if should_terminate:
+        # Handle potential termination with personality-driven decision
+        if should_terminate and person_id:
             disposition = identification_result.get("disposition", "unknown")
             reasoning = identification_result.get("reasoning", "Hostile behavior detected")
             
-            state.set_termination(f"Hostile speaker detected: {person_id}")
+            # Get speaker info for decision
+            speaker_info = self.person_service.person_manager.get_speaker_info(person_id) if self.person_service.person_manager else None
+            speaker_name = speaker_info.get("name", "Unknown") if speaker_info else "Unknown"
             
-            # Emit hostile behavior event
-            self.event_bus.emit(HostileBehaviorDetectedEvent(
-                state.conversation_id or "unknown", time.time(), person_id or "unknown",
-                reasoning, disposition
-            ))
+            # Make personality-driven decision about this returning speaker
+            transcript_turns = [turn for turn in current_turns if turn.transcript]
+            decision = self.decision_engine.decide_returning_speaker_action(
+                person_id, speaker_name, transcript_turns, 
+                self.person_service.person_manager if self.person_service else None
+            )
             
-            print(f"\n❌ {state.termination_reason}")
+            if decision.get("action") == "terminate":
+                # Randy decided to terminate
+                termination_message = decision.get("message", "I don't want to continue this conversation.")
+                state.set_termination(f"Randy chose to end conversation with {speaker_name}")
+                
+                # Say the termination message
+                print(f"\n🤖 Randy: {termination_message}")
+                if self.tts_service.use_tts:
+                    from ..infrastructure.audio.speech.tts import tts_say
+                    tts_say(termination_message)
+                
+                # Emit hostile behavior event
+                self.event_bus.emit(HostileBehaviorDetectedEvent(
+                    state.conversation_id or "unknown", time.time(), person_id,
+                    reasoning, disposition
+                ))
+            else:
+                # Randy decided to continue - show the reason
+                reason = decision.get("reason", "I'll give you a chance.")
+                print(f"\n🤖 Randy recognizes you but decides to continue: {reason}")
+                # Don't set termination, let the interview continue
     
     def _make_continuation_decision(self, turns: List[Turn], remaining_questions: int, 
                                   state: InterviewState) -> Dict[str, Any]:
