@@ -143,7 +143,7 @@ USE_PRESET_PERSONALITY = True
 PRESET_PERSONALITY = "detective"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
 
 # Overall temperature setting (0.0 = deterministic, 1.0 = very creative)
-LLM_TEMPERATURE = 0.7
+LLM_TEMPERATURE = 0.4
 
 # =============================================================================
 # INTERNAL CONSTANTS - Don't change these unless you know what you're doing
