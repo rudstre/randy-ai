@@ -9,6 +9,7 @@ from .schemas import InterviewDecision, InterviewContext, PersonalityTraits, par
 from .models import Turn
 from .prompts import InterviewPrompts, PromptFormatter
 from ..infrastructure.llm import VertexRestClient
+from ..config import LLM_TEMPERATURE
 
 logger = logging.getLogger("decision_engine")
 
@@ -35,7 +36,7 @@ class InterviewDecisionEngine:
         prompt = self.prompt_engine.build_decision_prompt(context)
         
         try:
-            raw_response = self.llm_client.generate_content(prompt, temperature=0.0)
+            raw_response = self.llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
             logger.info(f"Raw LLM response: {raw_response}")
             
             decision = parse_llm_decision(raw_response)
@@ -82,7 +83,7 @@ class InterviewDecisionEngine:
             )
             
             # Get LLM decision
-            response = self.llm_client.generate_content(prompt, temperature=0.3)
+            response = self.llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
             
             # Parse response
             try:
@@ -136,7 +137,7 @@ class InterviewDecisionEngine:
                 speaker_name, past_context, current_transcript
             )
             
-            response = self.llm_client.generate_content(prompt, temperature=0.2)
+            response = self.llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
             return response.strip()
             
         except Exception as e:
@@ -206,7 +207,7 @@ class PromptEngine:
                 # Get prompt from prompts module
                 prompt = InterviewPrompts.opening_question_generation(personality_context)
                 
-                response = self._llm_client.generate_content(prompt, temperature=0.7)
+                response = self._llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
                 # Clean up the response
                 opening_question = response.strip().strip('"').strip("'")
                 logger.info(f"Generated opening question: {opening_question}")

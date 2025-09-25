@@ -117,6 +117,8 @@ class PersonalityConfig:
 USE_PRESET_PERSONALITY = False
 PRESET_PERSONALITY = "default"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
 
+# Overall temperature setting (0.0 = deterministic, 1.0 = very creative)
+LLM_TEMPERATURE = 0.7
 
 # =============================================================================
 # INTERNAL CONSTANTS - Don't change these unless you know what you're doing
