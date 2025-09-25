@@ -61,6 +61,10 @@ class PersonManager:
                         features
                     )
                     return result.similarity
+                
+                def get_data_confidence(self, scale_factor=None):
+                    """Delegate to the underlying biometric profile."""
+                    return self._biometric.get_data_confidence(scale_factor)
             
             compatible_profiles[person_id] = CompatibilityProfile(biometric_profile, self.similarity_calculator)
         
