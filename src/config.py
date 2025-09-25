@@ -215,11 +215,14 @@ class Config:
     enable_tts: bool = ENABLE_TTS
     tts_voice: str = TTS_VOICE
     tts_rate_wpm: int = TTS_RATE_WPM
+    tts_pitch: int = TTS_PITCH
+    tts_amplitude: int = TTS_AMPLITUDE
     speaker_volume: float = SPEAKER_VOLUME
     language_code: str = LANGUAGE_CODE
     enable_voice_profiles: bool = ENABLE_VOICE_PROFILES
     voice_profiles_dir: str = VOICE_PROFILES_DIR
     voice_aggressiveness: float = VOICE_AGGRESSIVENESS
+    speaker_similarity_threshold: float = SPEAKER_SIMILARITY_THRESHOLD
     log_file: str = LOG_FILE
     log_level: str = LOG_LEVEL
     
