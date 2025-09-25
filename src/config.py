@@ -28,6 +28,7 @@ WORKDIR = "./_convo"
 ENABLE_TTS = True
 
 # TTS Voice Options (use python -m src --test-voices to hear them):
+# IMPORTANT: When changing voice, also update LANGUAGE_CODE to match!
 # US English Female Voices:
 #   "en-US-Neural2-F" - Natural female (default for many apps)
 #   "en-US-Neural2-G" - Casual female (current default)
@@ -77,7 +78,7 @@ ENABLE_TTS = True
 TTS_VOICE = "en-GB-Neural2-B"
 
 SPEAKER_VOLUME = 0.45
-LANGUAGE_CODE = "en-US"
+LANGUAGE_CODE = "en-GB"  # Must match the voice's language code
 
 # Voice identification
 ENABLE_VOICE_PROFILES = True

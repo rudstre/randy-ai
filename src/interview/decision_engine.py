@@ -277,9 +277,40 @@ class PromptEngine:
         # Get formatted trait values
         trait_values = PromptFormatter.format_trait_values(p)
         
+        # Generate location context based on language/voice settings
+        location_context = self._generate_location_context()
+        
         # Get base template and format it
         base_template = InterviewPrompts.personality_context_template()
-        base_context = base_template.format(trait_values=trait_values)
+        base_context = base_template.format(
+            trait_values=trait_values,
+            location_context=location_context
+        )
         
         # Add custom context if provided
         return PromptFormatter.add_custom_context(base_context, p.custom_context)
+    
+    def _generate_location_context(self) -> str:
+        """Generate location context based on system configuration."""
+        from ..config import LANGUAGE_CODE, TTS_VOICE
+        
+        # Map language codes to cultural contexts
+        location_contexts = {
+            "en-US": "You are an American AI - use American expressions, spelling, and cultural references naturally.",
+            "en-GB": "You are a British AI - use British expressions, spelling (colour, realise), and dry British wit naturally.",
+            "en-AU": "You are an Australian AI - use Australian expressions, casual tone, and laid-back Aussie attitude naturally.",
+            "en-IN": "You are an Indian AI - use Indian English expressions and cultural context naturally.",
+            "en-CA": "You are a Canadian AI - use Canadian expressions and polite, friendly tone naturally."
+        }
+        
+        # Try to get context from language code first
+        context = location_contexts.get(LANGUAGE_CODE, "")
+        
+        # If no context from language code, try to infer from voice
+        if not context and TTS_VOICE:
+            voice_prefix = TTS_VOICE.split("-")[:2]
+            if len(voice_prefix) >= 2:
+                voice_lang_code = "-".join(voice_prefix)
+                context = location_contexts.get(voice_lang_code, "")
+        
+        return context

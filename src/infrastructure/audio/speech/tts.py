@@ -145,7 +145,8 @@ def resume_speaker() -> None:
 
 @with_suppressed_audio_warnings
 def tts_say(text: str, rate_wpm: int = TTS_RATE_WPM, voice: str = TTS_VOICE, 
-           pitch: int = 50, amplitude: int = 100, use_speaker: bool = True) -> None:
+           pitch: int = 50, amplitude: int = 100, use_speaker: bool = True, 
+           language_code: str = "en-US") -> None:
     """
     High-quality Google Cloud Text-to-Speech through NB3 Speaker.
     """
@@ -165,7 +166,7 @@ def tts_say(text: str, rate_wpm: int = TTS_RATE_WPM, voice: str = TTS_VOICE,
         
         # Build the voice request - use the specified voice
         voice_params = texttospeech.VoiceSelectionParams(
-            language_code="en-US",
+            language_code=language_code,
             name=voice  # Use the voice parameter from function arguments
         )
         
@@ -256,7 +257,7 @@ def test_voice_options():
             client = texttospeech.TextToSpeechClient()
             input_text = texttospeech.SynthesisInput(text=test_phrase)
             voice = texttospeech.VoiceSelectionParams(
-                language_code="en-US",
+                language_code="-".join(voice_id.split("-")[:2]),
                 name=voice_id
             )
             audio_config = texttospeech.AudioConfig(

@@ -148,7 +148,8 @@ class InterviewOrchestrator:
             rate_wpm=tts_rate,
             pitch=tts_pitch,
             amplitude=tts_amplitude,
-            speaker_volume=speaker_volume
+            speaker_volume=speaker_volume,
+            language_code=language_code
         )
         
         # Initialize LLM and decision services
@@ -333,7 +334,7 @@ class InterviewOrchestrator:
         
         # Handle welcoming
         if should_welcome and not state.was_welcomed and person_id:
-            if self.person_service.welcome_returning_person(person_id, self.tts_service.use_tts):
+            if self.person_service.welcome_returning_person(person_id, self.tts_service.use_tts, self.tts_service.language_code):
                 state.welcome_speaker()
                 
                 # Emit welcomed event
@@ -366,7 +367,7 @@ class InterviewOrchestrator:
                 print(f"\n🤖 Randy: {termination_message}")
                 if self.tts_service.use_tts:
                     from ..infrastructure.audio.speech.tts import tts_say
-                    tts_say(termination_message)
+                    tts_say(termination_message, language_code=self.tts_service.language_code)
                 
                 # Emit hostile behavior event
                 self.event_bus.emit(HostileBehaviorDetectedEvent(

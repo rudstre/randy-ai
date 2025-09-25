@@ -133,7 +133,7 @@ class PersonIdentificationService:
             "disposition": id_result.disposition
         }
     
-    def welcome_returning_person(self, person_id: str, use_tts: bool = True) -> bool:
+    def welcome_returning_person(self, person_id: str, use_tts: bool = True, language_code: str = "en-US") -> bool:
         """
         Welcome a returning person.
         
@@ -153,7 +153,7 @@ class PersonIdentificationService:
         
         print(f"👋 {welcome_msg}")
         if use_tts:
-            tts_say(welcome_msg)
+            tts_say(welcome_msg, language_code=language_code)
         
         return True
     
@@ -334,12 +334,14 @@ class TTSService:
                  rate_wpm: int = 180,
                  pitch: int = 55,
                  amplitude: int = 120,
-                 speaker_volume: Optional[float] = None):
+                 speaker_volume: Optional[float] = None,
+                 language_code: str = "en-US"):
         self.use_tts = use_tts
         self.voice = voice
         self.rate_wpm = rate_wpm
         self.pitch = pitch
         self.amplitude = amplitude
+        self.language_code = language_code
         
         # Import config default if not provided
         if speaker_volume is None:
@@ -357,7 +359,8 @@ class TTSService:
                    rate_wpm=self.rate_wpm,
                    voice=self.voice,
                    pitch=self.pitch,
-                   amplitude=self.amplitude)
+                   amplitude=self.amplitude,
+                   language_code=self.language_code)
         else:
             print(f"{prefix} {message}")
     
