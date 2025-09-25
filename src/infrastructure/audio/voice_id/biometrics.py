@@ -93,7 +93,12 @@ class VoiceBiometricProfile:
                 self.features_max = {}
             
             # Calculate statistics from all individual samples
-            for feature_name in new_features.keys():
+            # Get all feature names that exist in any sample
+            all_feature_names = set()
+            for sample in self.all_turn_features:
+                all_feature_names.update(sample.keys())
+            
+            for feature_name in all_feature_names:
                 all_sample_values = [sample.get(feature_name, 0.0) for sample in self.all_turn_features if feature_name in sample]
                 
                 if all_sample_values:
@@ -113,6 +118,46 @@ class VoiceBiometricProfile:
                 self.features_std = {k: 0.0 for k in new_features.keys()}
                 self.features_min = new_features.copy()
                 self.features_max = new_features.copy()
+    
+    def recompute_statistics(self) -> bool:
+        """
+        Recompute statistical features from existing all_turn_features data.
+        Useful for fixing profiles that have empty features_mean due to bugs.
+        
+        Returns:
+            True if statistics were recomputed, False if no data available
+        """
+        if not self.all_turn_features:
+            return False
+        
+        # Clear existing statistics
+        self.features_mean = {}
+        self.features_std = {}
+        self.features_min = {}
+        self.features_max = {}
+        
+        # Get all feature names that exist in any sample
+        all_feature_names = set()
+        for sample in self.all_turn_features:
+            all_feature_names.update(sample.keys())
+        
+        # Calculate statistics for each feature
+        for feature_name in all_feature_names:
+            all_sample_values = [sample.get(feature_name, 0.0) for sample in self.all_turn_features if feature_name in sample]
+            
+            if all_sample_values:
+                self.features_mean[feature_name] = float(np.mean(all_sample_values))
+                self.features_min[feature_name] = float(np.min(all_sample_values))
+                self.features_max[feature_name] = float(np.max(all_sample_values))
+                
+                # Calculate std from all samples
+                if len(all_sample_values) > 1:
+                    self.features_std[feature_name] = float(np.std(all_sample_values))
+                else:
+                    self.features_std[feature_name] = 0.0
+        
+        logger.info(f"Recomputed statistics for {len(self.features_mean)} features from {len(self.all_turn_features)} samples")
+        return True
     
     def get_feature_vector(self) -> np.ndarray:
         """Get normalized feature vector for comparison."""

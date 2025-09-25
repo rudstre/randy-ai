@@ -434,6 +434,38 @@ class PersonManager:
         
         return ai_data
     
+    def fix_broken_profiles(self) -> Dict[str, bool]:
+        """
+        Fix profiles that have empty features_mean due to the update_features bug.
+        
+        Returns:
+            Dict mapping person_id to whether their profile was fixed
+        """
+        results = {}
+        
+        for person_id, profile in self.biometric_profiles.items():
+            # Check if profile has data but empty features_mean (the bug condition)
+            has_turn_data = bool(profile.all_turn_features)
+            has_stats = bool(profile.features_mean)
+            
+            if has_turn_data and not has_stats:
+                logger.info(f"Fixing broken profile for {person_id}: has {len(profile.all_turn_features)} samples but empty features_mean")
+                
+                # Recompute statistics from existing data
+                success = profile.recompute_statistics()
+                if success:
+                    # Save the fixed profile
+                    self.save_person_profile(person_id)
+                    logger.info(f"Fixed profile for {person_id}: computed {len(profile.features_mean)} feature statistics")
+                    results[person_id] = True
+                else:
+                    logger.warning(f"Failed to fix profile for {person_id}")
+                    results[person_id] = False
+            else:
+                results[person_id] = False  # No fix needed
+        
+        return results
+    
     
     def get_speaker_info(self, person_id: str) -> Optional[Dict[str, Any]]:
         """Get speaker information for ProgressiveVoiceIdentifier."""
