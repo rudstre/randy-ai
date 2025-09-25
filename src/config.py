@@ -26,7 +26,56 @@ WORKDIR = "./_convo"
 
 # Speech settings
 ENABLE_TTS = True
-TTS_VOICE = "en-US-Neural2-G"
+
+# TTS Voice Options (use python -m src --test-voices to hear them):
+# US English Female Voices:
+#   "en-US-Neural2-F" - Natural female (default for many apps)
+#   "en-US-Neural2-G" - Casual female (current default)
+#   "en-US-Neural2-H" - Conversational female
+#   "en-US-Standard-C" - Standard female
+#   "en-US-Standard-E" - Standard female (alternative)
+#   "en-US-Standard-G" - Standard female (warm)
+#   "en-US-Standard-H" - Standard female (bright)
+# US English Male Voices:
+#   "en-US-Neural2-A" - Deep male
+#   "en-US-Neural2-B" - Formal male  
+#   "en-US-Neural2-C" - Warm male
+#   "en-US-Neural2-D" - Authoritative male
+#   "en-US-Neural2-I" - Young male
+#   "en-US-Neural2-J" - News anchor style
+#   "en-US-Standard-A" - Standard male (deep)
+#   "en-US-Standard-B" - Standard male (clear)
+#   "en-US-Standard-D" - Standard male (warm)
+#   "en-US-Standard-I" - Standard male (friendly)
+# British English:
+#   "en-GB-Neural2-A" - British female (posh)
+#   "en-GB-Neural2-B" - British male (distinguished)
+#   "en-GB-Neural2-C" - British female (warm)
+#   "en-GB-Neural2-D" - British male (authoritative)
+#   "en-GB-Standard-A" - Standard British female
+#   "en-GB-Standard-B" - Standard British male
+#   "en-GB-Standard-C" - Standard British female (alternative)
+#   "en-GB-Standard-D" - Standard British male (alternative)
+# Australian English:
+#   "en-AU-Neural2-A" - Australian female (friendly)
+#   "en-AU-Neural2-B" - Australian male (casual)
+#   "en-AU-Neural2-C" - Australian female (warm)
+#   "en-AU-Neural2-D" - Australian male (clear)
+#   "en-AU-Standard-A" - Standard Australian female
+#   "en-AU-Standard-B" - Standard Australian male
+#   "en-AU-Standard-C" - Standard Australian female (alternative)
+#   "en-AU-Standard-D" - Standard Australian male (alternative)
+# Indian English:
+#   "en-IN-Neural2-A" - Indian female
+#   "en-IN-Neural2-B" - Indian male
+#   "en-IN-Neural2-C" - Indian female (alternative)
+#   "en-IN-Neural2-D" - Indian male (alternative)
+#   "en-IN-Standard-A" - Standard Indian female
+#   "en-IN-Standard-B" - Standard Indian male
+#   "en-IN-Standard-C" - Standard Indian female (alternative)
+#   "en-IN-Standard-D" - Standard Indian male (alternative)
+TTS_VOICE = "en-GB-Neural2-B"
+
 SPEAKER_VOLUME = 0.45
 LANGUAGE_CODE = "en-US"
 

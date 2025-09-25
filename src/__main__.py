@@ -28,9 +28,10 @@ def main():
         use_tts = True
     else:
         use_tts = config.enable_tts  # Use config default    
-    # Check for aggressiveness and volume parameters
+    # Check for aggressiveness, volume, and voice parameters
     voice_aggressiveness = config.voice_aggressiveness
     speaker_volume = config.speaker_volume
+    tts_voice = config.tts_voice
     for arg in sys.argv:
         if arg.startswith("--aggressiveness="):
             try:
@@ -56,6 +57,8 @@ def main():
             speaker_volume = 0.1
         elif arg in ["--loud"]:
             speaker_volume = 0.8
+        elif arg.startswith("--voice="):
+            tts_voice = arg.split("=")[1]
     
     # Show configuration
     if use_tts:
@@ -63,6 +66,8 @@ def main():
         print("   (Use --text or --no-tts to disable speech)")
         print(f"🔉 Speaker Volume: {speaker_volume:.1f}")
         print("   (Use --volume=0.0-1.0, --quiet, or --loud)")
+        print(f"🎤 TTS Voice: {tts_voice}")
+        print("   (Use --voice=voice-id or --test-voices to hear options)")
     else:
         print("📝 Text Mode: Questions will be displayed as text only")    
     # Show aggressiveness level
@@ -90,7 +95,7 @@ def main():
         enable_voice_profiles=config.enable_voice_profiles,
         voice_profiles_dir=config.voice_profiles_dir,
         speaker_similarity_threshold=config.speaker_similarity_threshold,
-        tts_voice=config.tts_voice,
+        tts_voice=tts_voice,
         tts_rate=config.tts_rate_wpm,
         tts_pitch=config.tts_pitch,
         tts_amplitude=config.tts_amplitude,
