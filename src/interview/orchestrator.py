@@ -339,15 +339,17 @@ class InterviewOrchestrator:
                 confidence, should_welcome
             ))
         
-        # Handle welcoming
+        # Skip automatic welcoming - let Randy react naturally based on his personality and history
+        # The old code would have triggered welcome_returning_person() here, but we want Randy
+        # to naturally recognize and react to returning speakers through his conversation context
         if should_welcome and not state.was_welcomed and person_id:
-            if self.person_service.welcome_returning_person(person_id, self.tts_service.use_tts, self.tts_service.language_code):
-                state.welcome_speaker()
-                
-                # Emit welcomed event
-                self.event_bus.emit(SpeakerWelcomedEvent(
-                    state.conversation_id or "unknown", time.time(), person_id, f"Speaker {person_id}"
-                ))
+            # Just mark as welcomed to prevent repeated attempts, but don't actually welcome
+            state.welcome_speaker()
+            
+            # Emit event for logging purposes
+            self.event_bus.emit(SpeakerWelcomedEvent(
+                state.conversation_id or "unknown", time.time(), person_id, f"Speaker {person_id}"
+            ))
         
         # Handle potential termination with personality-driven decision
         if should_terminate and person_id:
