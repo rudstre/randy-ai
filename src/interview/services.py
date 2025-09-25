@@ -170,36 +170,38 @@ class PersonIdentificationService:
         if not self.person_manager or not turns:
             return None, None, False, 0.0
         
-        # Use progressive identification results if available
         if state.identified_speaker:
             speaker_id = state.identified_speaker
             is_returning_speaker = True
             final_speaker_confidence = state.speaker_confidence
             
+            # Update existing profile
+            self._update_existing_profile(turns, speaker_id, final_speaker_confidence, final_payload, state)
+            
             # Get speaker info
             speaker_info = self.person_manager.get_speaker_info(speaker_id)
             speaker_name = speaker_info.get("name", "Unknown") if speaker_info else "Unknown"
             
-            # Update existing profile
-            self._update_existing_profile(turns, speaker_id, final_speaker_confidence, final_payload, state)
-            
-            if not state.was_welcomed:  # Only print if we didn't already welcome them
+            if not state.was_welcomed:
                 print(f"👤 Identified returning speaker: {speaker_name} (confidence: {final_speaker_confidence:.2f})")
             
             return speaker_id, speaker_name, is_returning_speaker, final_speaker_confidence
         
         else:
-            # Create speaker profile
+            # Create person profile for new speaker
             speaker_id = self._create_new_speaker_profile(turns, final_payload, state)
             
             if speaker_id:
                 speaker_info = self.person_manager.get_speaker_info(speaker_id)
                 speaker_name = speaker_info.get("name", "Unknown") if speaker_info else "Unknown"
                 
-                print(f"👤 Speaker detected, created profile: {speaker_name}")
-                logger.info(f"Created voice profile: {speaker_id} ({speaker_name})")
+                print(f"👤 New speaker, created profile: {speaker_name}")
+                logger.info(f"Created person profile: {speaker_id} ({speaker_name})")
                 
                 return speaker_id, speaker_name, False, 1.0
+            else:
+                # This should never happen now that we always create profiles
+                logger.error("Failed to create person profile - this should not happen!")
         
         return None, None, False, 0.0
     
@@ -211,7 +213,8 @@ class PersonIdentificationService:
             return
             
         conversation_features = self.person_manager.aggregate_conversation_features(turns)
-        if conversation_features and final_payload:
+        # Update profile even if voice features are empty (we still want name updates and conversation records)
+        if final_payload:
             individual_turn_features = [turn.features for turn in turns if hasattr(turn, 'features') and turn.features]
             
             conversation_summary = f"Interview on {datetime.now().strftime('%Y-%m-%d %H:%M')} - {final_payload.get('opinion_word', 'neutral')} opinion"
@@ -244,7 +247,8 @@ class PersonIdentificationService:
             )
             
             self.person_manager.update_person_profile(
-                speaker_id, conversation_features, conversation_record
+                speaker_id, conversation_features, conversation_record,
+                person_name=state.extracted_speaker_name
             )
             
             logger.info(f"Updated profile for returning speaker: {speaker_id} with confidence {confidence:.3f}")
@@ -257,8 +261,10 @@ class PersonIdentificationService:
             return None
             
         conversation_features = self.person_manager.aggregate_conversation_features(turns)
+        # Allow profile creation even with minimal features (conversation data is still valuable)
         if not conversation_features:
-            return None
+            logger.info("No voice features available, creating profile with transcript data only")
+            conversation_features = {}
         
         # Prepare conversation metadata
         conversation_summary = ""

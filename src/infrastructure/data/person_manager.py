@@ -279,13 +279,33 @@ class PersonManager:
         return person_id
     
     def update_person_profile(self, person_id: str, features: Dict[str, float],
-                             conversation_record: Optional[ConversationRecord] = None) -> None:
+                             conversation_record: Optional[ConversationRecord] = None,
+                             person_name: Optional[str] = None) -> None:
         """Update an existing person profile with new data."""
         if person_id not in self.biometric_profiles:
             logger.warning(f"Cannot update unknown person: {person_id}")
             return
         
         biometric_profile = self.biometric_profiles[person_id]
+        
+        # Update name only if current name is a placeholder (keep first real name)
+        if person_name and person_name.strip():
+            current_name = biometric_profile.person_name or ""
+            is_placeholder = (not current_name or 
+                            current_name.startswith("Person #") or 
+                            current_name == "Unknown")
+            
+            if is_placeholder:
+                logger.info(f"Setting person name: {current_name} -> {person_name}")
+                biometric_profile.person_name = person_name.strip()
+                # Add to extracted names history
+                if person_name not in biometric_profile.extracted_names:
+                    biometric_profile.extracted_names.append(person_name.strip())
+            else:
+                # Keep the original name, but still track this name was mentioned
+                logger.info(f"Keeping original name '{current_name}', but noting they also said '{person_name}'")
+                if person_name not in biometric_profile.extracted_names:
+                    biometric_profile.extracted_names.append(person_name.strip())
         
         if conversation_record:
             # Update biometric profile with conversation data

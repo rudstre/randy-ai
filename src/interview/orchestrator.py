@@ -82,6 +82,7 @@ class InterviewOrchestrator:
         
         # Store core configuration
         self.max_questions = max_questions
+        self.workdir = workdir
         self.log_file = os.path.join(workdir, "interview.log")
         
         # Setup logging
@@ -122,13 +123,12 @@ class InterviewOrchestrator:
             logger.warning(f"AudioCapture not available: {e}")
             self.audio_service = None
         
-        # Initialize voice services
-        person_manager = None
-        progressive_identifier = None
+        # Initialize person profiles
+        person_manager = PersonManager(voice_profiles_dir)
         
+        # Initialize voice identification (only if enabled)
+        progressive_identifier = None
         if enable_voice_profiles:
-            person_manager = PersonManager(voice_profiles_dir)
-            # PersonManager now provides compatibility interface for ProgressiveVoiceIdentifier
             progressive_identifier = ProgressiveVoiceIdentifier(
                 person_manager,
                 aggressiveness=voice_aggressiveness
