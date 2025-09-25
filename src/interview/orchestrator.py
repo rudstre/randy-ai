@@ -294,6 +294,7 @@ class InterviewOrchestrator:
         finally:
             # Cleanup
             self.tts_service.cleanup()
+            self.conversation_manager.cleanup_conversation_workspace()
     
     def _process_turn(self, question: str, turn_idx: int, conversation_dir: str,
                      per_turn_seconds: float, state: InterviewState) -> Turn:

@@ -401,6 +401,7 @@ class ConversationManager:
     
     def __init__(self, workdir: str):
         self.workdir = workdir
+        self.current_conversation_dir = None  # Track current conversation for cleanup
     
     def create_conversation_workspace(self) -> Tuple[str, str]:
         """
@@ -412,7 +413,29 @@ class ConversationManager:
         conversation_id = f"conv_{int(time.time())}"
         conversation_dir = os.path.join(self.workdir, conversation_id)
         os.makedirs(conversation_dir, exist_ok=True)
+        self.current_conversation_dir = conversation_dir  # Store for cleanup
         return conversation_id, conversation_dir
+    
+    def cleanup_conversation_workspace(self, conversation_dir: Optional[str] = None) -> None:
+        """
+        Remove conversation directory and all its contents.
+        
+        Args:
+            conversation_dir: Directory to remove. If None, uses current conversation directory.
+        """
+        import shutil
+        
+        target_dir = conversation_dir or self.current_conversation_dir
+        if target_dir and os.path.exists(target_dir):
+            try:
+                shutil.rmtree(target_dir)
+                print(f"🧹 Cleaned up conversation directory: {os.path.basename(target_dir)}")
+                logger.info(f"Removed conversation directory: {target_dir}")
+                if target_dir == self.current_conversation_dir:
+                    self.current_conversation_dir = None
+            except Exception as e:
+                logger.warning(f"Failed to cleanup conversation directory {target_dir}: {e}")
+                print(f"⚠️  Could not clean up {os.path.basename(target_dir)}: {e}")
     
     def aggregate_conversation_features(self, turns: List[Turn]) -> Dict[str, float]:
         """Aggregate voice features across all turns in conversation."""
