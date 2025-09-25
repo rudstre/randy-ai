@@ -5,7 +5,7 @@ import wave
 import numpy as np
 from scipy.signal import resample_poly
 
-from ....config import DEFAULT_TARGET_RMS
+from ....config import TARGET_RMS
 
 
 def stereo_to_mono(x: np.ndarray) -> np.ndarray:
@@ -23,7 +23,7 @@ def resample_48k_to_16k(mono48: np.ndarray) -> np.ndarray:
     return resample_poly(mono48, up=1, down=3).astype(np.float32)
 
 
-def normalize_audio(audio: np.ndarray, target_rms: float = DEFAULT_TARGET_RMS) -> np.ndarray:
+def normalize_audio(audio: np.ndarray, target_rms: float = TARGET_RMS) -> np.ndarray:
     """Normalize audio to target RMS level."""
     rms = float(np.sqrt(np.mean(audio**2)) + 1e-9)
     gain = min(20.0, target_rms / rms) if rms > 0 else 1.0

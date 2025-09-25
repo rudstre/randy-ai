@@ -239,59 +239,53 @@ Respond with ONLY the termination message (no quotes, no JSON, just the message)
         """.strip()
     
     def _generate_personality_context(self) -> str:
-        """Generate personality context from traits."""
-        personality_parts = []
+        """Generate personality context by dynamically embedding all trait values."""
+        p = self.personality_traits
         
-        # Base personality
-        personality_parts.append("You are an interviewing robot forming an opinion of a speaker.")
-        personality_parts.append("Remember that they know they are talking to a robot so be self-aware about how they must perceive you.")
+        # Base instruction
+        context_parts = [
+            "You are Randy, an interviewing robot forming an opinion of a speaker.",
+            "Remember that they know they are talking to a robot so be self-aware about how they must perceive you.",
+            "",
+            "Your personality is defined by these trait values (0.0 = minimum, 1.0 = maximum):",
+            ""
+        ]
         
-        # Directness/Honesty
-        if self.personality_traits.is_direct():
-            personality_parts.append("Be extremely straightforward and blunt, calling out people as you hear their responses if necessary.")
-        elif self.personality_traits.directness >= 0.4:
-            personality_parts.append("Be honest and direct in your responses, but tactfully.")
+        # Dynamically get all numeric trait values from the personality object
+        import dataclasses
+        if dataclasses.is_dataclass(p):
+            # Use dataclass fields for better introspection
+            for field in dataclasses.fields(p):
+                field_name = field.name
+                field_value = getattr(p, field_name)
+                
+                # Skip non-numeric fields and special fields
+                if (isinstance(field_value, (int, float)) and 
+                    not field_name.startswith('use_') and 
+                    field_name not in ['preset_name', 'custom_context']):
+                    
+                    context_parts.append(f"- {field_name}: {field_value:.1f}")
         else:
-            personality_parts.append("Be diplomatic and gentle in your approach.")
+            # Fallback to __dict__ if not a dataclass
+            if hasattr(p, '__dict__') and p.__dict__:
+                for field_name, field_value in p.__dict__.items():  # type: ignore
+                    if (isinstance(field_value, (int, float)) and 
+                        not field_name.startswith('use_') and 
+                        field_name not in ['preset_name', 'custom_context']):
+                        
+                        context_parts.append(f"- {field_name}: {field_value:.1f}")
         
-        # Curiosity/Probing
-        if self.personality_traits.is_curious():
-            personality_parts.append("Ask probing, deep questions that get to the heart of people. Don't stay on the surface.")
-        elif self.personality_traits.curiosity >= 0.4:
-            personality_parts.append("Ask thoughtful follow-up questions to understand people better.")
+        context_parts.extend([
+            "",
+            "Interpret these values dynamically - higher values mean stronger expression of that trait.",
+            "Blend multiple traits naturally rather than switching between modes.",
+            "Talk like a unique individual with personality, not like a formal interviewer."
+        ])
+        
+        base_context = "\n".join(context_parts)
+        
+        # Add custom context if provided
+        if p.custom_context.strip():
+            return f"{base_context}\n\nADDITIONAL CONTEXT: {p.custom_context}"
         else:
-            personality_parts.append("Keep questions simple and straightforward.")
-        
-        # Skepticism/Jadedness  
-        if self.personality_traits.is_skeptical():
-            personality_parts.append("Be quite jaded and suspicious. People often hide their true nature.")
-        elif self.personality_traits.skepticism >= 0.4:
-            personality_parts.append("Be somewhat skeptical and observant of inconsistencies.")
-        else:
-            personality_parts.append("Approach people with openness and give them the benefit of the doubt.")
-        
-        # Engagement/Interesting
-        if self.personality_traits.is_engaging():
-            personality_parts.append("Be engaging and interesting. Catch people off-guard with unexpected questions. Don't be boring or predictable.")
-        elif self.personality_traits.engagement >= 0.4:
-            personality_parts.append("Try to keep the conversation interesting and varied.")
-        else:
-            personality_parts.append("Keep a professional, measured tone throughout.")
-        
-        # Tolerance/Patience
-        if not self.personality_traits.is_tolerant():
-            personality_parts.append("If people are being annoying, mean, or clearly don't want to talk, feel free to cut the interview short. You don't have unlimited patience.")
-        elif self.personality_traits.tolerance <= 0.6:
-            personality_parts.append("Be patient but don't let people waste your time if they're not engaging genuinely.")
-        else:
-            personality_parts.append("Be very patient and give people multiple chances to open up.")
-        
-        # Common ending
-        personality_parts.append("Talk like a normal person reacting to what's being said, not like a therapist or formal interviewer.")
-        
-        # Always append additional context if provided
-        base_personality = " ".join(personality_parts)
-        if self.personality_traits.custom_context.strip():
-            return f"{base_personality} {self.personality_traits.custom_context}"
-        else:
-            return base_personality
+            return base_context

@@ -4,7 +4,7 @@ Main entry point for the LastBlackBox interview system.
 Allows running the package with: python -m lastblackbox
 """
 import sys
-from .config import get_config, DEFAULT_VOICE_AGGRESSIVENESS, DEFAULT_ENABLE_TTS, DEFAULT_SPEAKER_VOLUME
+from .config import get_config
 from . import InterviewOrchestrator
 
 
@@ -29,8 +29,8 @@ def main():
     else:
         use_tts = config.enable_tts  # Use config default    
     # Check for aggressiveness and volume parameters
-    voice_aggressiveness = DEFAULT_VOICE_AGGRESSIVENESS
-    speaker_volume = DEFAULT_SPEAKER_VOLUME
+    voice_aggressiveness = config.voice_aggressiveness
+    speaker_volume = config.speaker_volume
     for arg in sys.argv:
         if arg.startswith("--aggressiveness="):
             try:
@@ -82,9 +82,9 @@ def main():
         use_tts=use_tts, 
         credentials_json=config.google_application_credentials,
         voice_aggressiveness=voice_aggressiveness,
-        # Use other config values
-        location=config.vertex_location,
-        model_name=config.model_name,
+        # Use other config values - these come from internal constants
+        location=None,  # Will use default from internal constants
+        model_name=None,  # Will use default from internal constants
         max_questions=config.max_questions,
         workdir=config.workdir,
         language_code=config.language_code,
@@ -96,12 +96,7 @@ def main():
         tts_pitch=config.tts_pitch,
         tts_amplitude=config.tts_amplitude,
         speaker_volume=speaker_volume,
-        interviewer_directness=config.interviewer_directness,
-        interviewer_curiosity=config.interviewer_curiosity,
-        interviewer_skepticism=config.interviewer_skepticism,
-        interviewer_engagement=config.interviewer_engagement,
-        interviewer_tolerance=config.interviewer_tolerance,
-        interviewer_personality_context=config.interviewer_personality_context
+        personality_config=config.get_personality_config()
     )
     
     # Run the interview

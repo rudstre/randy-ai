@@ -36,11 +36,9 @@ from ..config import (
     DEFAULT_ENABLE_VOICE_PROFILES, DEFAULT_VOICE_PROFILES_DIR,
     DEFAULT_SPEAKER_SIMILARITY_THRESHOLD, DEFAULT_TTS_VOICE,
     DEFAULT_TTS_RATE_WPM, DEFAULT_TTS_PITCH, DEFAULT_TTS_AMPLITUDE, DEFAULT_SPEAKER_VOLUME,
-    DEFAULT_VOICE_AGGRESSIVENESS, DEFAULT_PER_TURN_SECONDS,
-    DEFAULT_INTERVIEWER_DIRECTNESS, DEFAULT_INTERVIEWER_CURIOSITY,
-    DEFAULT_INTERVIEWER_SKEPTICISM, DEFAULT_INTERVIEWER_ENGAGEMENT, 
-    DEFAULT_INTERVIEWER_TOLERANCE, DEFAULT_INTERVIEWER_PERSONALITY_CONTEXT
+    DEFAULT_VOICE_AGGRESSIVENESS, DEFAULT_PER_TURN_SECONDS
 )
+from ..config import PersonalityConfig
 
 logger = logging.getLogger("orchestrator")
 
@@ -80,12 +78,7 @@ class InterviewOrchestrator:
                  tts_amplitude: int = DEFAULT_TTS_AMPLITUDE,
                  speaker_volume: Optional[float] = None,
                  voice_aggressiveness: float = DEFAULT_VOICE_AGGRESSIVENESS,
-                 interviewer_directness: float = DEFAULT_INTERVIEWER_DIRECTNESS,
-                 interviewer_curiosity: float = DEFAULT_INTERVIEWER_CURIOSITY,
-                 interviewer_skepticism: float = DEFAULT_INTERVIEWER_SKEPTICISM,
-                 interviewer_engagement: float = DEFAULT_INTERVIEWER_ENGAGEMENT,
-                 interviewer_tolerance: float = DEFAULT_INTERVIEWER_TOLERANCE,
-                 interviewer_personality_context: str = DEFAULT_INTERVIEWER_PERSONALITY_CONTEXT):
+                 personality_config: Optional['PersonalityConfig'] = None):
         
         # Store core configuration
         self.max_questions = max_questions
@@ -94,15 +87,10 @@ class InterviewOrchestrator:
         # Setup logging
         setup_logging(self.log_file)
         
-        # Create personality traits
-        self.personality_traits = PersonalityTraits(
-            directness=interviewer_directness,
-            curiosity=interviewer_curiosity,
-            skepticism=interviewer_skepticism,
-            engagement=interviewer_engagement,
-            tolerance=interviewer_tolerance,
-            custom_context=interviewer_personality_context
-        )
+        # Create personality configuration
+        if personality_config is None:
+            personality_config = PersonalityConfig()  # Use defaults
+        self.personality_traits = personality_config
         
         # Initialize event system
         self.event_bus = InterviewEventBus()

@@ -81,30 +81,8 @@ class InterviewContext:
         return self.remaining_questions <= 0 or self.state.termination_reason is not None
 
 
-@dataclass
-class PersonalityTraits:
-    """Interviewer personality configuration."""
-    directness: float = 0.8
-    curiosity: float = 0.7
-    skepticism: float = 0.8
-    engagement: float = 0.8
-    tolerance: float = 0.2
-    custom_context: str = ""
-    
-    def is_direct(self) -> bool:
-        return self.directness >= 0.7
-    
-    def is_curious(self) -> bool:
-        return self.curiosity >= 0.7
-    
-    def is_skeptical(self) -> bool:
-        return self.skepticism >= 0.7
-    
-    def is_engaging(self) -> bool:
-        return self.engagement >= 0.7
-    
-    def is_tolerant(self) -> bool:
-        return self.tolerance >= 0.6
+# Import the flexible personality system
+from ..config import PersonalityConfig as PersonalityTraits
 
 
 # Define common structures using dataclasses (always available)

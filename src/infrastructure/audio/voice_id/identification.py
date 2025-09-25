@@ -96,8 +96,8 @@ class ProgressiveVoiceIdentifier:
         base_thresholds = self.confidence_thresholds.copy()
         
         # Check if adaptive tolerance is enabled
-        from ....config import DEFAULT_ADAPTIVE_TOLERANCE_ENABLED
-        if not DEFAULT_ADAPTIVE_TOLERANCE_ENABLED:
+        from ....config import ADAPTIVE_TOLERANCE_ENABLED
+        if not ADAPTIVE_TOLERANCE_ENABLED:
             return base_thresholds
         
         if not speaker_id or speaker_id not in self.voice_manager.profiles:
@@ -110,8 +110,8 @@ class ProgressiveVoiceIdentifier:
         
         # When data confidence is low, make thresholds more lenient
         # Formula: threshold * (1.0 - adjustment_factor * (1.0 - data_confidence))
-        from ....config import DEFAULT_ADAPTIVE_CONFIDENCE_ADJUSTMENT
-        adjustment_factor = DEFAULT_ADAPTIVE_CONFIDENCE_ADJUSTMENT  # Up to 30% reduction in thresholds for unknown speakers
+        from ....config import ADAPTIVE_CONFIDENCE_ADJUSTMENT
+        adjustment_factor = ADAPTIVE_CONFIDENCE_ADJUSTMENT  # Up to 30% reduction in thresholds for unknown speakers
         
         adaptive_thresholds = {}
         for level, threshold in base_thresholds.items():

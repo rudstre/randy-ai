@@ -9,9 +9,10 @@ import logging
 from typing import Optional
 
 from ....config import (
-    DEFAULT_TTS_RATE_WPM, DEFAULT_TTS_VOICE, DEFAULT_SPEAKER_DEVICE,
-    DEFAULT_SPEAKER_SAMPLE_RATE, DEFAULT_SPEAKER_BUFFER_SIZE, DEFAULT_SPEAKER_VOLUME
+    TTS_PITCH, TTS_AMPLITUDE, SPEAKER_DEVICE,
+    SPEAKER_SAMPLE_RATE, SPEAKER_BUFFER_SIZE
 )
+from ....config import TTS_RATE_WPM, TTS_VOICE, SPEAKER_VOLUME
 
 try:
     from ....utils import with_suppressed_audio_warnings
@@ -27,11 +28,11 @@ _speaker_instance = None
 
 
 @with_suppressed_audio_warnings
-def initialize_speaker(output_device: int = DEFAULT_SPEAKER_DEVICE, 
+def initialize_speaker(output_device: int = SPEAKER_DEVICE, 
                       num_channels: int = 1, 
-                      sample_rate: int = DEFAULT_SPEAKER_SAMPLE_RATE,
-                      buffer_size: int = DEFAULT_SPEAKER_BUFFER_SIZE,
-                      volume: float = DEFAULT_SPEAKER_VOLUME) -> None:
+                      sample_rate: int = SPEAKER_SAMPLE_RATE,
+                      buffer_size: int = SPEAKER_BUFFER_SIZE,
+                      volume: float = SPEAKER_VOLUME) -> None:
     """Initialize the NB3 Speaker for TTS output."""
     global _speaker_instance
     
@@ -143,7 +144,7 @@ def resume_speaker() -> None:
 
 
 @with_suppressed_audio_warnings
-def tts_say(text: str, rate_wpm: int = DEFAULT_TTS_RATE_WPM, voice: str = DEFAULT_TTS_VOICE, 
+def tts_say(text: str, rate_wpm: int = TTS_RATE_WPM, voice: str = TTS_VOICE, 
            pitch: int = 50, amplitude: int = 100, use_speaker: bool = True) -> None:
     """
     High-quality Google Cloud Text-to-Speech through NB3 Speaker.

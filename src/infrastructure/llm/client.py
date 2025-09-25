@@ -10,7 +10,7 @@ import google.auth
 import google.auth.transport.requests
 from google.oauth2 import service_account
 
-from ...config import DEFAULT_VERTEX_LOCATION, DEFAULT_MODEL_NAME, DEFAULT_LLM_TIMEOUT, DEFAULT_MAX_OUTPUT_TOKENS
+from ...config import VERTEX_LOCATION, MODEL_NAME, LLM_TIMEOUT, MAX_OUTPUT_TOKENS
 
 logger = logging.getLogger("llm_client")
 
@@ -19,10 +19,10 @@ class VertexRestClient:
     
     def __init__(self,
                  project: str,
-                 location: str = DEFAULT_VERTEX_LOCATION,
-                 model: str = DEFAULT_MODEL_NAME,
+                 location: str = VERTEX_LOCATION,
+                 model: str = MODEL_NAME,
                  credentials_json: Optional[str] = None,
-                 timeout: int = DEFAULT_LLM_TIMEOUT):
+                 timeout: int = LLM_TIMEOUT):
         self.project = project
         self.location = location
         self.model = model
@@ -55,7 +55,7 @@ class VertexRestClient:
         self,
         prompt_text: str,
         temperature: float = 0.0,
-        max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
         stop_sequences: Optional[List[str]] = None,
@@ -135,7 +135,7 @@ class VertexRestClient:
         logger.debug("Sending JSON prompt to LLM...")
         
         try:
-            text = self.generate_content(prompt_json, temperature=0.0, max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS)
+            text = self.generate_content(prompt_json, temperature=0.0, max_output_tokens=MAX_OUTPUT_TOKENS)
         except Exception as e:
             logger.error("LLM request failed: %s", e)
             raise

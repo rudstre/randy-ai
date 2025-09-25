@@ -11,10 +11,10 @@ from typing import Dict, Optional, Any
 import numpy as np
 
 from ....config import (
-    DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE_CAPTURE, DEFAULT_FRAME_MS,
-    DEFAULT_MAX_SAMPLES_30S, DEFAULT_MIC_GAIN, DEFAULT_SAMPLE_RATE_TARGET,
-    DEFAULT_TARGET_RMS, DEFAULT_VAD_SILENCE_THRESHOLD, DEFAULT_VAD_SILENCE_DURATION,
-    DEFAULT_VAD_MIN_SPEECH_DURATION
+    CHANNELS, SAMPLE_RATE_CAPTURE, FRAME_MS,
+    MAX_SAMPLES_30S, MIC_GAIN, SAMPLE_RATE_TARGET,
+    TARGET_RMS, VAD_SILENCE_THRESHOLD, VAD_SILENCE_DURATION,
+    VAD_MIN_SPEECH_DURATION, ALSA_LIB_NAMES
 )
 from .processing import stereo_to_mono, remove_dc, resample_48k_to_16k, normalize_audio, write_wav
 from ....utils import import_quietly, with_suppressed_audio_warnings
@@ -119,27 +119,27 @@ class AudioCapture:
     
     def __init__(self, 
                  input_device: Optional[int] = None,
-                 num_channels: int = DEFAULT_CHANNELS,
-                 sr_capture: int = DEFAULT_SAMPLE_RATE_CAPTURE,
-                 frame_ms: int = DEFAULT_FRAME_MS,
-                 max_samples: int = DEFAULT_MAX_SAMPLES_30S,
-                 mic_gain: float = DEFAULT_MIC_GAIN,
-                 sr_target: int = DEFAULT_SAMPLE_RATE_TARGET,
-                 target_rms: float = DEFAULT_TARGET_RMS,
-                 silence_threshold: float = DEFAULT_VAD_SILENCE_THRESHOLD,
-                 silence_duration: float = DEFAULT_VAD_SILENCE_DURATION,
-                 min_speech_duration: float = DEFAULT_VAD_MIN_SPEECH_DURATION):
+                 num_channels: int = CHANNELS,
+                 sr_capture: int = SAMPLE_RATE_CAPTURE,
+                 frame_ms: int = FRAME_MS,
+                 max_samples: int = MAX_SAMPLES_30S,
+                 mic_gain: float = MIC_GAIN,
+                 sr_target: int = SAMPLE_RATE_TARGET,
+                 target_rms: float = TARGET_RMS,
+                 silence_threshold: float = VAD_SILENCE_THRESHOLD,
+                 silence_duration: float = VAD_SILENCE_DURATION,
+                 min_speech_duration: float = VAD_MIN_SPEECH_DURATION):
         
         # Auto-detect best microphone configuration if not specified
         if input_device is None:
             detected_device, detected_channels, detected_rate = get_best_microphone_config()
             self.input_device = detected_device
             # Override defaults with detected values
-            if num_channels == DEFAULT_CHANNELS:  # Only override if using default
+            if num_channels == CHANNELS:  # Only override if using default
                 self.num_channels = detected_channels
             else:
                 self.num_channels = num_channels
-            if sr_capture == DEFAULT_SAMPLE_RATE_CAPTURE:  # Only override if using default
+            if sr_capture == SAMPLE_RATE_CAPTURE:  # Only override if using default
                 self.sr_capture = detected_rate
             else:
                 self.sr_capture = sr_capture
