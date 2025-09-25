@@ -164,7 +164,7 @@ class InterviewOrchestrator:
         )
         
         self.prompt_engine = PromptEngine(self.personality_traits)
-        self.decision_engine = InterviewDecisionEngine(self.llm_client, self.prompt_engine)
+        self.decision_engine = InterviewDecisionEngine(self.llm_client, self.prompt_engine, person_manager)
     
     def run(self,
             initial_question: Optional[str] = None,

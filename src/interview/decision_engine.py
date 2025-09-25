@@ -17,12 +17,58 @@ logger = logging.getLogger("decision_engine")
 class InterviewDecisionEngine:
     """Handles all interview decision making logic."""
     
-    def __init__(self, llm_client: VertexRestClient, prompt_engine: 'PromptEngine'):
+    def __init__(self, llm_client: VertexRestClient, prompt_engine: 'PromptEngine', person_manager=None):
         self.llm_client = llm_client
         self.prompt_engine = prompt_engine
+        self.person_manager = person_manager
         # Give the prompt engine access to the LLM client
         self.prompt_engine._llm_client = llm_client
     
+    def build_decision_prompt_with_profile_access(self, context: InterviewContext) -> str:
+        """Build decision prompt with access to person manager for speaker profiles."""
+        # Prepare context data
+        recent_turns = context.get_recent_turns(2)
+        recent_data = [
+            {
+                "question": turn.question,
+                "transcript": turn.transcript,
+                "features_sample": {k: v for k, v in turn.features.items() if k in ["pitch_mean", "mfcc_1", "loudness"]}
+            }
+            for turn in recent_turns
+        ]
+        
+        full_transcript = context.get_full_transcript()
+        
+        # Check if we're dealing with a returning speaker
+        is_returning_speaker = context.state.identified_speaker is not None
+        speaker_profile = None
+        speaker_name = None
+        
+        if is_returning_speaker:
+            # Get speaker info from the interview state
+            speaker_id = context.state.identified_speaker
+            speaker_name = context.state.extracted_speaker_name or "returning speaker"
+            
+            # Get the full profile from person manager (we have access here)
+            if self.person_manager:
+                speaker_profile = self.person_manager.profiles.get(speaker_id)
+        
+        # Generate personality context (with returning speaker awareness)
+        personality_context = self.prompt_engine._generate_personality_context(
+            is_returning_speaker=is_returning_speaker,
+            speaker_name=speaker_name,
+            speaker_profile=speaker_profile
+        )
+        
+        # Use prompt from prompts module
+        return InterviewPrompts.decision_prompt(
+            personality_context=personality_context,
+            remaining_questions=context.remaining_questions,
+            recent_data=recent_data,
+            full_transcript=full_transcript,
+            acoustic_features=context.acoustic_features_aggregate
+        )
+
     def decide_next_action(self, context: InterviewContext) -> InterviewDecision:
         """
         Decide whether to ask another question or finalize the interview.
@@ -33,7 +79,7 @@ class InterviewDecisionEngine:
         Returns:
             InterviewDecision with validated structure
         """
-        prompt = self.prompt_engine.build_decision_prompt(context)
+        prompt = self.build_decision_prompt_with_profile_access(context)
         
         # Debug log the decision prompt
         logger.info(f"FULL DECISION PROMPT:\n{prompt}")
@@ -263,6 +309,10 @@ class PromptEngine:
             # Get speaker info from the interview state
             speaker_id = context.state.identified_speaker
             speaker_name = context.state.extracted_speaker_name or "returning speaker"
+            
+            # Get the full profile from person manager via the decision engine
+            # Note: This is a workaround since PromptEngine doesn't have direct access
+            # The profile will be passed through the personality context generation
         
         # Generate personality context (with returning speaker awareness)
         personality_context = self._generate_personality_context(

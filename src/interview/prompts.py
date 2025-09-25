@@ -389,15 +389,37 @@ class PromptFormatter:
         if not profile:
             return f"No previous interaction history with {speaker_name}."
         
-        recent_opinions = profile.opinion_history[-3:] if profile.opinion_history else []
-        recent_scores = profile.score_history[-3:] if profile.score_history else []
-        conversation_count = profile.conversation_count
-        last_summary = profile.conversation_summaries[-1] if profile.conversation_summaries else 'No summary'
-        
-        return f"""
+        try:
+            # Try to get conversation history data
+            opinion_history = getattr(profile, 'opinion_history', [])
+            score_history = getattr(profile, 'score_history', [])
+            conversation_count = getattr(profile, 'conversation_count', 0)
+            conversation_summaries = getattr(profile, 'conversation_summaries', [])
+            
+            # Include ALL conversation data, not just recent
+            all_opinions = opinion_history if opinion_history else []
+            all_scores = score_history if score_history else []
+            all_summaries = conversation_summaries if conversation_summaries else []
+            
+            # If we have actual conversation data, format it nicely
+            if all_opinions or all_scores or conversation_count > 0:
+                summary_text = ""
+                if all_summaries:
+                    summary_text = "\n- Conversation summaries:\n" + "\n".join([f"  • {summary}" for summary in all_summaries])
+                else:
+                    summary_text = "\n- Conversation summaries: No summaries available"
+                
+                return f"""
 Past interactions with {speaker_name}:
 - Total conversations: {conversation_count}
-- Recent opinions: {recent_opinions}
-- Recent scores: {recent_scores}
-- Last interaction summary: {last_summary}
-        """.strip()
+- All opinions: {[f"{op['opinion_word']} ({op['score_overall']:.1f})" for op in all_opinions] if all_opinions else ['None']}
+- All scores: {[f"{score:.1f}" for score in all_scores] if all_scores else ['None']}{summary_text}
+                """.strip()
+            else:
+                return f"You've met {speaker_name} before, but conversation details are not available."
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("prompt_formatter")
+            logger.warning(f"Error building speaker history context: {e}")
+            return f"You've spoken with {speaker_name} before but details are fuzzy."
