@@ -205,7 +205,7 @@ class PromptEngine:
                 personality_context = self._generate_personality_context()
                 
                 # Get prompt from prompts module
-                prompt = InterviewPrompts.opening_question_generation(personality_context)
+                prompt = InterviewPrompts.opening_question_generation(personality_context, self.personality_traits)
                 
                 response = self._llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
                 # Clean up the response
@@ -272,25 +272,14 @@ class PromptEngine:
     
     def _generate_personality_context(self) -> str:
         """Generate personality context by dynamically embedding all trait values."""
-        import logging
-        logger = logging.getLogger("prompt_engine")
-        
         p = self.personality_traits
-        
-        # Log the personality traits for debugging
-        logger.info(f"Personality traits object: {p}")
-        logger.info(f"Personality traits type: {type(p)}")
         
         # Get formatted trait values
         trait_values = PromptFormatter.format_trait_values(p)
-        logger.info(f"Formatted trait values: {trait_values}")
         
         # Get base template and format it
         base_template = InterviewPrompts.personality_context_template()
         base_context = base_template.format(trait_values=trait_values)
         
         # Add custom context if provided
-        final_context = PromptFormatter.add_custom_context(base_context, p.custom_context)
-        logger.info(f"Final personality context: {final_context}")
-        
-        return final_context
+        return PromptFormatter.add_custom_context(base_context, p.custom_context)

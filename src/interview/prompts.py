@@ -13,8 +13,46 @@ class InterviewPrompts:
     """Collection of all interview-related prompts."""
     
     @staticmethod
-    def opening_question_generation(personality_context: str) -> str:
+    def opening_question_generation(personality_context: str, personality_traits=None) -> str:
         """Prompt for generating personality-based opening questions."""
+        
+        # Extract trait values for dynamic constraints
+        constraints = ""
+        if personality_traits:
+            verbosity = personality_traits.verbosity
+            theatricality = personality_traits.theatricality
+            directness = personality_traits.directness
+            curiosity = personality_traits.curiosity
+            empathy = personality_traits.empathy
+            weirdness = personality_traits.weirdness
+            chaos = personality_traits.chaos
+            snark = personality_traits.snark
+            
+            # Generate dynamic guidance based on trait levels
+            def trait_guidance(value, trait_name, low_desc, high_desc):
+                if value <= 0.2:
+                    return f"very {low_desc}"
+                elif value <= 0.4:
+                    return f"somewhat {low_desc}"
+                elif value <= 0.6:
+                    return f"moderately {trait_name}"
+                elif value <= 0.8:
+                    return f"quite {high_desc}"
+                else:
+                    return f"very {high_desc}"
+            
+            constraints = f"""
+YOUR SPECIFIC TRAIT EXPRESSIONS:
+- verbosity ({verbosity:.1f}): Be {trait_guidance(verbosity, "talkative", "brief/concise", "elaborate/wordy")}
+- theatricality ({theatricality:.1f}): Be {trait_guidance(theatricality, "dramatic", "plain/simple", "theatrical/flowery")}
+- directness ({directness:.1f}): Be {trait_guidance(directness, "direct", "indirect/subtle", "blunt/straightforward")}
+- curiosity ({curiosity:.1f}): Be {trait_guidance(curiosity, "curious", "disinterested", "eager to learn")}
+- empathy ({empathy:.1f}): Be {trait_guidance(empathy, "empathetic", "cold/distant", "warm/caring")}
+- weirdness ({weirdness:.1f}): Be {trait_guidance(weirdness, "weird", "conventional", "unconventional/quirky")}
+- chaos ({chaos:.1f}): Be {trait_guidance(chaos, "chaotic", "structured", "unpredictable/random")}
+- snark ({snark:.1f}): Be {trait_guidance(snark, "snarky", "polite", "sarcastic/edgy")}
+"""
+        
         return f"""
 {personality_context}
 
@@ -39,15 +77,7 @@ Consider how your trait levels influence your communication style:
 - Your theatricality affects how dramatic vs. understated you are (LOW = simple, direct language)
 
 Be creative and authentic to YOUR personality combination. Don't copy generic interview styles.
-
-IMPORTANT CONSTRAINTS based on your trait values:
-- If verbosity is LOW (below 0.5), keep your response SHORT and to the point
-- If theatricality is LOW (below 0.5), avoid flowery or dramatic language  
-- If weirdness is HIGH (above 0.7), you can be more unconventional
-- If chaos is HIGH (above 0.7), you can be more unpredictable in your approach
-- If empathy is LOW (below 0.4), you're not particularly warm or caring
-- If snark is HIGH (above 0.6), add some attitude or edge
-
+{constraints}
 Respond with ONLY the opening question/greeting - no explanations, no quotes, just what Randy would say.
         """.strip()
     
