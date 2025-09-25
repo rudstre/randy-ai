@@ -87,11 +87,17 @@ class PersonalityConfig:
             ),
             "detective": cls(
                 curiosity=0.9, skepticism=0.8, intensity=0.7, verbosity=0.8, 
-                snark=0.4, directness=0.9, chaos=0.1
+                snark=0.4, directness=0.9, chaos=0.1,
+                # Override conflicting defaults to make detective more coherent
+                weirdness=0.3, humor=0.4, playfulness=0.4, theatricality=0.3,
+                empathy=0.3, tolerance=0.2, intimidation=0.7
             ),
             "therapist": cls(
                 empathy=0.9, tolerance=0.8, intensity=0.2, verbosity=0.7,
-                directness=0.3, curiosity=0.6, intimidation=0.2
+                directness=0.3, curiosity=0.6, intimidation=0.2,
+                # Make therapist gentle and supportive
+                snark=0.1, humor=0.3, weirdness=0.2, chaos=0.1,
+                playfulness=0.3, theatricality=0.2, skepticism=0.3
             ),
             "comedian": cls(
                 humor=1.0, playfulness=0.8, theatricality=0.8, randomness=0.6, 
@@ -114,8 +120,8 @@ class PersonalityConfig:
 
 
 # Personality presets (set to True to use a preset instead of custom values above)
-USE_PRESET_PERSONALITY = False
-PRESET_PERSONALITY = "default"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
+USE_PRESET_PERSONALITY = True
+PRESET_PERSONALITY = "detective"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
 
 # Overall temperature setting (0.0 = deterministic, 1.0 = very creative)
 LLM_TEMPERATURE = 0.7

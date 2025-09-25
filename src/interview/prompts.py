@@ -18,11 +18,23 @@ class InterviewPrompts:
         return f"""
 {personality_context}
 
-You are starting a new interview conversation. Generate a single opening question or greeting that:
-1. Asks the person to introduce themselves 
-2. Reflects your personality naturally
-3. Is conversational and direct (not formal)
-4. Sets the tone for the interview
+You are starting a new interview conversation. Generate a single opening question or greeting that reflects your personality.
+
+Your opening should:
+1. Ask them to introduce themselves in some way
+2. Authentically reflect YOUR specific personality trait values (not a generic greeting)
+3. Set the tone for how YOU conduct interviews
+4. Sound natural and conversational
+
+Consider how your trait levels influence your communication style:
+- Your directness level affects how straightforward vs. subtle you are
+- Your snark level affects how much attitude or edge you have
+- Your empathy level affects how warm and understanding you sound
+- Your curiosity level affects how eager you seem to learn about them
+- Your verbosity affects whether you're brief or more elaborate
+- Your intensity affects the energy and urgency in your approach
+
+Be creative and authentic to YOUR personality combination. Don't copy generic interview styles.
 
 Respond with ONLY the opening question/greeting - no explanations, no quotes, just what Randy would say.
         """.strip()
