@@ -49,9 +49,10 @@ class PersonManager:
         for person_id, biometric_profile in self.biometric_profiles.items():
             # Create a compatibility wrapper
             class CompatibilityProfile:
-                def __init__(self, biometric_profile, similarity_calc):
+                def __init__(self, biometric_profile, similarity_calc, conversation_records=None):
                     self._biometric = biometric_profile
                     self._similarity_calc = similarity_calc
+                    self._conversation_records = conversation_records or []
                 
                 def calculate_similarity(self, features, similarity_calculator=None):
                     calc = similarity_calculator or self._similarity_calc
@@ -65,8 +66,52 @@ class PersonManager:
                 def get_data_confidence(self, scale_factor=None):
                     """Delegate to the underlying biometric profile."""
                     return self._biometric.get_data_confidence(scale_factor)
+                
+                @property
+                def opinion_history(self) -> List[Dict[str, Any]]:
+                    """Get opinion history from conversation records."""
+                    opinions = []
+                    for conv in self._conversation_records:
+                        if conv.final_opinion_word:
+                            opinions.append({
+                                'date': conv.date_time,
+                                'opinion_word': conv.final_opinion_word,
+                                'score_overall': conv.final_score_overall,
+                                'score_text_only': conv.final_score_text_only,
+                                'rationale': conv.ai_rationale,
+                                'conversation_id': conv.conversation_id
+                            })
+                    return opinions
+                
+                @property
+                def score_history(self) -> List[float]:
+                    """Get score history from conversation records."""
+                    return [conv.final_score_overall for conv in self._conversation_records if conv.final_score_overall is not None]
+                
+                @property
+                def conversation_count(self) -> int:
+                    """Get total number of conversations."""
+                    return len(self._conversation_records)
+                
+                @property
+                def conversation_summaries(self) -> List[str]:
+                    """Get conversation summaries."""
+                    summaries = []
+                    for conv in self._conversation_records:
+                        # Create a brief summary from the conversation
+                        if conv.turns:
+                            first_response = conv.turns[0].transcript if conv.turns else "No response"
+                            summary = f"{conv.final_opinion_word} ({conv.final_score_overall:.1f}) - '{first_response[:50]}...'"
+                            summaries.append(summary)
+                    return summaries
             
-            compatible_profiles[person_id] = CompatibilityProfile(biometric_profile, self.similarity_calculator)
+            # Get conversation records for this person
+            conversation_records = self.conversation_records.get(person_id, [])
+            compatible_profiles[person_id] = CompatibilityProfile(
+                biometric_profile, 
+                self.similarity_calculator,
+                conversation_records
+            )
         
         return compatible_profiles
     
