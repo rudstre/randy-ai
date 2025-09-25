@@ -31,16 +31,23 @@ class InterviewPrompts:
             # Generate dynamic guidance based on trait levels
             def trait_guidance(value, trait_name, low_desc, high_desc):
                 if value <= 0.2:
-                    return f"very {low_desc}"
+                    return f"extremely {low_desc}"
                 elif value <= 0.4:
-                    return f"somewhat {low_desc}"
+                    return f"quite {low_desc}"
                 elif value <= 0.6:
                     return f"moderately {trait_name}"
                 elif value <= 0.8:
                     return f"quite {high_desc}"
                 else:
-                    return f"very {high_desc}"
+                    return f"extremely {high_desc}"
             
+            # Add specific length guidance for very low verbosity
+            length_guidance = ""
+            if verbosity <= 0.3:
+                length_guidance = f"\nIMPORTANT: With verbosity {verbosity:.1f}, keep your response to 8 words or less."
+            elif verbosity <= 0.5:
+                length_guidance = f"\nIMPORTANT: With verbosity {verbosity:.1f}, keep your response to 12 words or less."
+
             constraints = f"""
 YOUR SPECIFIC TRAIT EXPRESSIONS:
 - verbosity ({verbosity:.1f}): Be {trait_guidance(verbosity, "talkative", "brief/concise", "elaborate/wordy")}
@@ -51,6 +58,7 @@ YOUR SPECIFIC TRAIT EXPRESSIONS:
 - weirdness ({weirdness:.1f}): Be {trait_guidance(weirdness, "weird", "conventional", "unconventional/quirky")}
 - chaos ({chaos:.1f}): Be {trait_guidance(chaos, "chaotic", "structured", "unpredictable/random")}
 - snark ({snark:.1f}): Be {trait_guidance(snark, "snarky", "polite", "sarcastic/edgy")}
+{length_guidance}
 """
         
         return f"""
