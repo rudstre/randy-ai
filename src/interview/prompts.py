@@ -177,3 +177,22 @@ class PromptFormatter:
         if custom_context and custom_context.strip():
             return f"{base_prompt}\n\nADDITIONAL CONTEXT: {custom_context}"
         return base_prompt
+    
+    @staticmethod
+    def build_speaker_history_context(profile, speaker_name: str) -> str:
+        """Build context string about speaker's past interactions."""
+        if not profile:
+            return f"No previous interaction history with {speaker_name}."
+        
+        recent_opinions = profile.opinion_history[-3:] if profile.opinion_history else []
+        recent_scores = profile.score_history[-3:] if profile.score_history else []
+        conversation_count = profile.conversation_count
+        last_summary = profile.conversation_summaries[-1] if profile.conversation_summaries else 'No summary'
+        
+        return f"""
+Past interactions with {speaker_name}:
+- Total conversations: {conversation_count}
+- Recent opinions: {recent_opinions}
+- Recent scores: {recent_scores}
+- Last interaction summary: {last_summary}
+        """.strip()
