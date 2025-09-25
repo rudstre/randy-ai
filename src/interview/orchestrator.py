@@ -326,6 +326,13 @@ class InterviewOrchestrator:
         if person_id:
             state.update_speaker_identification(person_id, confidence)
             
+            # Get and set speaker name if we don't have it yet
+            if not state.extracted_speaker_name and self.person_service.person_manager:
+                speaker_info = self.person_service.person_manager.get_speaker_info(person_id)
+                if speaker_info:
+                    speaker_name = speaker_info.get("name", "Unknown")
+                    state.extracted_speaker_name = speaker_name
+            
             # Emit speaker identified event
             self.event_bus.emit(SpeakerIdentifiedEvent(
                 state.conversation_id or "unknown", time.time(), person_id,

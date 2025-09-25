@@ -316,6 +316,24 @@ class PersonIdentificationService:
         
         return speaker_id
     
+    def check_for_returning_speakers(self) -> Dict[str, Any]:
+        """
+        Check if we have any known speakers. This is used to prepare for potential returning speakers
+        before the conversation starts.
+        
+        Returns:
+            Dict with information about known speakers
+        """
+        if not self.person_manager:
+            return {"has_known_speakers": False, "speaker_count": 0}
+        
+        known_speakers = self.person_manager.list_all_persons()
+        return {
+            "has_known_speakers": len(known_speakers) > 0,
+            "speaker_count": len(known_speakers),
+            "known_speakers": known_speakers
+        }
+    
     def start_new_conversation(self):
         """Initialize progressive identification for new conversation."""
         if self.progressive_identifier and self.person_manager:

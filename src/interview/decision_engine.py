@@ -77,8 +77,12 @@ class InterviewDecisionEngine:
             past_context = PromptFormatter.build_speaker_history_context(profile, speaker_name)
             current_transcript = " ".join([turn.transcript for turn in current_turns if turn.transcript])
             
-            # Generate personality context
-            personality_context = self.prompt_engine._generate_personality_context()
+            # Generate personality context for returning speaker
+            personality_context = self.prompt_engine._generate_personality_context(
+                is_returning_speaker=True, 
+                speaker_name=speaker_name, 
+                speaker_profile=profile
+            )
             
             # Get decision prompt
             prompt = InterviewPrompts.returning_speaker_decision_prompt(
@@ -204,7 +208,7 @@ class PromptEngine:
         
         try:
             if hasattr(self, '_llm_client') and self._llm_client:
-                # Generate personality context
+                # Generate personality context for new person (since we don't know who they are yet)
                 personality_context = self._generate_personality_context()
                 
                 # Get prompt from prompts module
@@ -250,8 +254,22 @@ class PromptEngine:
         
         full_transcript = context.get_full_transcript()
         
-        # Generate personality context
-        personality_context = self._generate_personality_context()
+        # Check if we're dealing with a returning speaker
+        is_returning_speaker = context.state.identified_speaker is not None
+        speaker_profile = None
+        speaker_name = None
+        
+        if is_returning_speaker:
+            # Get speaker info from the interview state
+            speaker_id = context.state.identified_speaker
+            speaker_name = context.state.extracted_speaker_name or "returning speaker"
+        
+        # Generate personality context (with returning speaker awareness)
+        personality_context = self._generate_personality_context(
+            is_returning_speaker=is_returning_speaker,
+            speaker_name=speaker_name,
+            speaker_profile=speaker_profile
+        )
         
         # Use prompt from prompts module
         return InterviewPrompts.decision_prompt(
@@ -276,7 +294,7 @@ class PromptEngine:
             current_transcript=current_transcript
         )
     
-    def _generate_personality_context(self) -> str:
+    def _generate_personality_context(self, is_returning_speaker: bool = False, speaker_name: Optional[str] = None, speaker_profile=None) -> str:
         """Generate personality context by dynamically embedding all trait values."""
         p = self.personality_traits
         
@@ -286,8 +304,21 @@ class PromptEngine:
         # Generate location context based on language/voice settings
         location_context = self._generate_location_context()
         
+        # Get past context for returning speakers
+        past_context = None
+        if is_returning_speaker and speaker_profile:
+            try:
+                past_context = PromptFormatter.build_speaker_history_context(speaker_profile, speaker_name or "someone")
+            except Exception as e:
+                logger.warning(f"Failed to build speaker history context: {e}")
+                past_context = "You've spoken before but details are fuzzy."
+        
         # Get base template and format it
-        base_template = InterviewPrompts.personality_context_template()
+        base_template = InterviewPrompts.personality_context_template(
+            is_returning_speaker=is_returning_speaker, 
+            speaker_name=speaker_name, 
+            past_context=past_context
+        )
         base_context = base_template.format(
             trait_values=trait_values,
             location_context=location_context
