@@ -4,7 +4,7 @@ Main entry point for the LastBlackBox interview system.
 Allows running the package with: python -m lastblackbox
 """
 import sys
-from .config import get_config
+from .config import get_config, VERTEX_LOCATION, MODEL_NAME
 from . import InterviewOrchestrator
 
 
@@ -82,9 +82,8 @@ def main():
         use_tts=use_tts, 
         credentials_json=config.google_application_credentials,
         voice_aggressiveness=voice_aggressiveness,
-        # Use other config values - these come from internal constants
-        location=None,  # Will use default from internal constants
-        model_name=None,  # Will use default from internal constants
+        location=VERTEX_LOCATION,
+        model_name=MODEL_NAME,
         max_questions=config.max_questions,
         workdir=config.workdir,
         language_code=config.language_code,
@@ -101,9 +100,6 @@ def main():
     
     # Run the interview
     result = orchestrator.run(per_turn_seconds=config.per_turn_seconds)
-    
-    # Results are already displayed by the run() method
-    # Detailed information is in the log file
 
 
 if __name__ == "__main__":
