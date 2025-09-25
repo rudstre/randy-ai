@@ -111,7 +111,7 @@ class ProgressiveVoiceIdentifier:
         # When data confidence is low, make thresholds more lenient
         # Formula: threshold * (1.0 - adjustment_factor * (1.0 - data_confidence))
         from ....config import DEFAULT_ADAPTIVE_CONFIDENCE_ADJUSTMENT
-        adjustment_factor = DEFAULT_ADAPTIVE_CONFIDENCE_ADJUSTMENT  # Up to 30% reduction in thresholds for new speakers
+        adjustment_factor = DEFAULT_ADAPTIVE_CONFIDENCE_ADJUSTMENT  # Up to 30% reduction in thresholds for unknown speakers
         
         adaptive_thresholds = {}
         for level, threshold in base_thresholds.items():
@@ -169,7 +169,7 @@ class ProgressiveVoiceIdentifier:
         self.current_session_evidence = {}
         self.turn_similarities = {}
         self.session_active = True
-        logger.info("Started new conversation - reset progressive tracking")
+        logger.info("Started conversation - reset progressive tracking")
     
     def identify_from_turn(self, turn, turn_number: int = 1) -> ProgressiveIdentificationResult:
         """

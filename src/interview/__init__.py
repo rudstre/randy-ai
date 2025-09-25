@@ -18,7 +18,7 @@ from .schemas import (
 
 # Service classes
 from .services import (
-    AudioInterviewService, SpeakerIdentificationService, 
+    AudioInterviewService, PersonIdentificationService, 
     TTSService, ConversationManager
 )
 
@@ -59,7 +59,7 @@ __all__ = [
     "PersonalityTraits", "parse_llm_decision",
     
     # Services
-    "AudioInterviewService", "SpeakerIdentificationService", 
+    "AudioInterviewService", "PersonIdentificationService", 
     "TTSService", "ConversationManager",
     
     # Decision engine

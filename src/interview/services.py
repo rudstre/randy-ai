@@ -10,7 +10,8 @@ from datetime import datetime
 from .models import Turn, InterviewResult
 from .schemas import InterviewState, PersonalityTraits, InterviewContext
 from ..infrastructure.audio import extract_voice_features, tts_say, recognize_google_sync, initialize_speaker, cleanup_speaker
-from ..infrastructure.audio.voice_id import VoiceProfileManager, ProgressiveVoiceIdentifier
+from ..infrastructure.data import PersonManager
+from ..infrastructure.audio.voice_id import ProgressiveVoiceIdentifier
 from ..config import CANONICAL_FEATURE_MAPPING
 
 logger = logging.getLogger("services")
@@ -90,18 +91,18 @@ class AudioInterviewService:
             )
 
 
-class SpeakerIdentificationService:
-    """Handles speaker identification and voice profiling."""
+class PersonIdentificationService:
+    """Handles person identification and voice profiling."""
     
     def __init__(self, 
-                 voice_profile_manager: Optional[VoiceProfileManager],
+                 person_manager: Optional[PersonManager],
                  progressive_identifier: Optional[ProgressiveVoiceIdentifier]):
-        self.voice_profile_manager = voice_profile_manager
+        self.person_manager = person_manager
         self.progressive_identifier = progressive_identifier
     
-    def identify_speaker_from_turn(self, turn: Turn, turn_idx: int) -> Dict[str, Any]:
+    def identify_person_from_turn(self, turn: Turn, turn_idx: int) -> Dict[str, Any]:
         """
-        Identify speaker from a turn and return identification results.
+        Identify person from a turn and return identification results.
         
         Args:
             turn: Turn object with voice features
@@ -112,7 +113,7 @@ class SpeakerIdentificationService:
         """
         if not self.progressive_identifier:
             return {
-                "speaker_id": None,
+                "person_id": None,
                 "confidence": 0.0,
                 "should_welcome": False,
                 "should_terminate": False,
@@ -124,7 +125,7 @@ class SpeakerIdentificationService:
         print(f"🎯 {id_result.reasoning}")
         
         return {
-            "speaker_id": id_result.speaker_id,
+            "person_id": id_result.speaker_id,
             "confidence": id_result.confidence,
             "should_welcome": id_result.should_welcome,
             "should_terminate": id_result.should_terminate,
@@ -132,23 +133,23 @@ class SpeakerIdentificationService:
             "disposition": id_result.disposition
         }
     
-    def welcome_returning_speaker(self, speaker_id: str, use_tts: bool = True) -> bool:
+    def welcome_returning_person(self, person_id: str, use_tts: bool = True) -> bool:
         """
-        Welcome a returning speaker.
+        Welcome a returning person.
         
         Args:
-            speaker_id: ID of the speaker to welcome
+            person_id: ID of the person to welcome
             use_tts: Whether to use text-to-speech
             
         Returns:
             True if welcome was performed
         """
-        if not self.voice_profile_manager:
+        if not self.person_manager:
             return False
             
-        speaker_info = self.voice_profile_manager.get_speaker_info(speaker_id)
-        speaker_name = speaker_info.get('name', 'friend') if speaker_info else 'friend'
-        welcome_msg = f"Welcome back, {speaker_name}! It's nice to see you again."
+        person_info = self.person_manager.get_person_info(person_id)
+        person_name = person_info.get('name', 'friend') if person_info else 'friend'
+        welcome_msg = f"Welcome back, {person_name}! It's nice to see you again."
         
         print(f"👋 {welcome_msg}")
         if use_tts:
@@ -166,7 +167,7 @@ class SpeakerIdentificationService:
         Returns:
             Tuple of (speaker_id, speaker_name, is_returning_speaker, confidence)
         """
-        if not self.voice_profile_manager or not turns:
+        if not self.person_manager or not turns:
             return None, None, False, 0.0
         
         # Use progressive identification results if available
@@ -176,7 +177,7 @@ class SpeakerIdentificationService:
             final_speaker_confidence = state.speaker_confidence
             
             # Get speaker info
-            speaker_info = self.voice_profile_manager.get_speaker_info(speaker_id)
+            speaker_info = self.person_manager.get_speaker_info(speaker_id)
             speaker_name = speaker_info.get("name", "Unknown") if speaker_info else "Unknown"
             
             # Update existing profile
@@ -188,15 +189,15 @@ class SpeakerIdentificationService:
             return speaker_id, speaker_name, is_returning_speaker, final_speaker_confidence
         
         else:
-            # Create new speaker profile
+            # Create speaker profile
             speaker_id = self._create_new_speaker_profile(turns, final_payload, state)
             
             if speaker_id:
-                speaker_info = self.voice_profile_manager.get_speaker_info(speaker_id)
+                speaker_info = self.person_manager.get_speaker_info(speaker_id)
                 speaker_name = speaker_info.get("name", "Unknown") if speaker_info else "Unknown"
                 
-                print(f"👤 New speaker detected, created profile: {speaker_name}")
-                logger.info(f"Created new voice profile: {speaker_id} ({speaker_name})")
+                print(f"👤 Speaker detected, created profile: {speaker_name}")
+                logger.info(f"Created voice profile: {speaker_id} ({speaker_name})")
                 
                 return speaker_id, speaker_name, False, 1.0
         
@@ -206,19 +207,44 @@ class SpeakerIdentificationService:
                                confidence: float, final_payload: Optional[Dict[str, Any]], 
                                state: InterviewState):
         """Update existing speaker profile with conversation data."""
-        if not self.voice_profile_manager:
+        if not self.person_manager:
             return
             
-        conversation_features = self.voice_profile_manager.aggregate_conversation_features(turns)
+        conversation_features = self.person_manager.aggregate_conversation_features(turns)
         if conversation_features and final_payload:
             individual_turn_features = [turn.features for turn in turns if hasattr(turn, 'features') and turn.features]
             
             conversation_summary = f"Interview on {datetime.now().strftime('%Y-%m-%d %H:%M')} - {final_payload.get('opinion_word', 'neutral')} opinion"
-            self.voice_profile_manager.update_profile(
-                speaker_id, conversation_features, confidence, conversation_summary,
-                final_payload.get('opinion_word', 'neutral'),
-                final_payload.get('score_overall', 0.0),
-                len(turns), individual_turn_features
+            # Create conversation record for the update
+            from ..infrastructure.data.conversations import ConversationRecord, ConversationTurn
+            
+            # Convert turns to ConversationTurn objects
+            conversation_turns = []
+            for i, turn in enumerate(turns):
+                if hasattr(turn, 'features') and turn.features:
+                    conv_turn = ConversationTurn(
+                        turn_idx=i,
+                        question=getattr(turn, 'question', ''),
+                        transcript=getattr(turn, 'transcript', ''),
+                        timestamp=datetime.now().isoformat(),
+                        voice_features=turn.features,
+                        duration_seconds=getattr(turn, 'duration_seconds', None)
+                    )
+                    conversation_turns.append(conv_turn)
+            
+            # Create conversation record
+            conversation_record = ConversationRecord(
+                conversation_id=f"conv_{int(datetime.now().timestamp())}",
+                date_time=datetime.now().isoformat(),
+                duration_minutes=None,
+                turns=conversation_turns,
+                final_opinion_word=final_payload.get('opinion_word', 'neutral'),
+                final_score_overall=final_payload.get('score_overall', 0.0),
+                aggregated_voice_features=conversation_features
+            )
+            
+            self.person_manager.update_person_profile(
+                speaker_id, conversation_features, conversation_record
             )
             
             logger.info(f"Updated profile for returning speaker: {speaker_id} with confidence {confidence:.3f}")
@@ -226,11 +252,11 @@ class SpeakerIdentificationService:
     def _create_new_speaker_profile(self, turns: List[Turn], 
                                   final_payload: Optional[Dict[str, Any]], 
                                   state: InterviewState) -> Optional[str]:
-        """Create new speaker profile."""
-        if not self.voice_profile_manager:
+        """Create speaker profile."""
+        if not self.person_manager:
             return None
             
-        conversation_features = self.voice_profile_manager.aggregate_conversation_features(turns)
+        conversation_features = self.person_manager.aggregate_conversation_features(turns)
         if not conversation_features:
             return None
         
@@ -247,24 +273,48 @@ class SpeakerIdentificationService:
         # Extract individual turn features
         individual_turn_features = [turn.features for turn in turns if hasattr(turn, 'features') and turn.features]
         
+        # Create conversation record for new profile
+        from ..infrastructure.data.conversations import ConversationRecord, ConversationTurn
+        
+        # Convert turns to ConversationTurn objects
+        conversation_turns = []
+        for i, turn in enumerate(turns):
+            if hasattr(turn, 'features') and turn.features:
+                conv_turn = ConversationTurn(
+                    turn_idx=i,
+                    question=getattr(turn, 'question', ''),
+                    transcript=getattr(turn, 'transcript', ''),
+                    timestamp=datetime.now().isoformat(),
+                    voice_features=turn.features,
+                    duration_seconds=getattr(turn, 'duration_seconds', None)
+                )
+                conversation_turns.append(conv_turn)
+        
+        # Create conversation record
+        conversation_record = ConversationRecord(
+            conversation_id=f"conv_{int(datetime.now().timestamp())}",
+            date_time=datetime.now().isoformat(),
+            duration_minutes=None,
+            turns=conversation_turns,
+            final_opinion_word=opinion_word,
+            final_score_overall=overall_score,
+            aggregated_voice_features=conversation_features
+        )
+        
         # Create profile
-        speaker_id = self.voice_profile_manager.create_new_profile(
+        speaker_id = self.person_manager.create_new_person_profile(
             conversation_features,
-            speaker_name=state.extracted_speaker_name,
-            conversation_summary=conversation_summary,
-            opinion_word=opinion_word,
-            overall_score=overall_score,
-            turn_count=len(turns),
-            individual_turns=individual_turn_features
+            conversation_record=conversation_record,
+            person_name=state.extracted_speaker_name
         )
         
         return speaker_id
     
     def start_new_conversation(self):
         """Initialize progressive identification for new conversation."""
-        if self.progressive_identifier and self.voice_profile_manager:
+        if self.progressive_identifier and self.person_manager:
             self.progressive_identifier.start_new_conversation()
-            known_speakers = self.voice_profile_manager.list_all_speakers()
+            known_speakers = self.person_manager.list_all_persons()
             if known_speakers:
                 print(f"📚 I know {len(known_speakers)} people from previous conversations")
 

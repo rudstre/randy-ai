@@ -1,13 +1,13 @@
-"""Voice profile management and speaker identification."""
+"""Voice biometric identification and similarity analysis."""
 
-from .profiles import VoiceProfile, VoiceProfileManager
+# Voice biometric identification exports
+from .biometrics import VoiceBiometricProfile
 from .identification import ProgressiveVoiceIdentifier, IdentificationConfidence, SpeakerDisposition
 from .similarity import SimilarityCalculator
 
 __all__ = [
-    "VoiceProfile",
-    "VoiceProfileManager", 
-    "ProgressiveVoiceIdentifier",
+    "VoiceBiometricProfile",
+    "ProgressiveVoiceIdentifier", 
     "IdentificationConfidence",
     "SpeakerDisposition",
     "SimilarityCalculator"

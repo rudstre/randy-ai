@@ -81,7 +81,7 @@ class MockSpeakerIdentificationService(SpeakerIdentificationService):
             return result
         else:
             return {
-                "speaker_id": None,
+                "person_id": None,
                 "confidence": 0.0,
                 "should_welcome": False,
                 "should_terminate": False,
@@ -209,7 +209,7 @@ def create_mock_interview_setup() -> Dict[str, Any]:
             "disposition": None
         },
         {
-            "speaker_id": "speaker_123",
+            "person_id": "speaker_123",
             "confidence": 0.85,
             "should_welcome": False,
             "should_terminate": False,
@@ -217,7 +217,7 @@ def create_mock_interview_setup() -> Dict[str, Any]:
             "disposition": "friendly"
         },
         {
-            "speaker_id": "speaker_123",
+            "person_id": "speaker_123",
             "confidence": 0.9,
             "should_welcome": False,
             "should_terminate": False,
@@ -276,7 +276,7 @@ def create_mock_interview_setup() -> Dict[str, Any]:
     
     return {
         "audio_service": audio_service,
-        "speaker_service": speaker_service, 
+        "person_service": speaker_service, 
         "tts_service": tts_service,
         "llm_client": llm_client,
         "decision_engine": decision_engine,

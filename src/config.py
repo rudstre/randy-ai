@@ -69,14 +69,14 @@ DEFAULT_MAX_SAMPLES_30S = 48000 * 30
 # Speech and TTS defaults
 DEFAULT_LANGUAGE_CODE = "en-US"
 DEFAULT_TTS_RATE_WPM = 180  # Words per minute (80-450)
-DEFAULT_TTS_VOICE = "en-US-Neural2-F"  # Google Cloud TTS voice name
+DEFAULT_TTS_VOICE = "en-US-Neural2-G"  # Google Cloud TTS voice name
 DEFAULT_TTS_PITCH = 55       # Pitch (0-99, default 50) - not used with Google TTS
 DEFAULT_TTS_AMPLITUDE = 120  # Volume (0-200, default 100)
 DEFAULT_ENABLE_TTS = True    # Enable TTS by default (set to False for text-only default)
 # Google Cloud TTS Voice Options (High Quality Neural Voices):
 # 
 # FEMALE VOICES:
-# "en-US-Neural2-F" - Natural US female (current default)
+# "en-US-Neural2-F" - Natural US female
 # "en-US-Neural2-G" - Casual US female
 # "en-US-Neural2-H" - Conversational US female
 # "en-GB-Neural2-A" - British female
@@ -99,7 +99,7 @@ DEFAULT_ENABLE_TTS = True    # Enable TTS by default (set to False for text-only
 DEFAULT_SPEAKER_DEVICE = 1      # Audio output device for RPi
 DEFAULT_SPEAKER_SAMPLE_RATE = 16000  # Match TTS output
 DEFAULT_SPEAKER_BUFFER_SIZE = 1600   # Buffer size for audio playback
-DEFAULT_SPEAKER_VOLUME = 0.25   # Speaker volume (0.0-1.0, default 0.25)
+DEFAULT_SPEAKER_VOLUME = 0.45   # Speaker volume (0.0-1.0, default 0.25)
 
 # LLM defaults
 DEFAULT_VERTEX_LOCATION = "us-central1"

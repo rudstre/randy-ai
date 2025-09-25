@@ -98,10 +98,10 @@ class VertexRestClient:
     def _parse_response_text(self, resp_json: Dict[str, Any]) -> str:
         """
         Parse response JSON to extract text content.
-        Tries modern Vertex schema first, then falls back to alternatives.
+        Tries Vertex schema first, then falls back to alternatives.
         """
         try:
-            # Modern schema: candidates[0].content.parts[0].text
+            # Vertex schema: candidates[0].content.parts[0].text
             cands = resp_json.get("candidates", [])
             if cands:
                 first = cands[0]

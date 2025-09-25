@@ -71,7 +71,7 @@ class SpeakerIdentifiedEvent(InterviewEvent):
             conversation_id=conversation_id,
             timestamp=timestamp,
             data={
-                "speaker_id": speaker_id,
+                "person_id": speaker_id,
                 "confidence": confidence,
                 "is_returning": is_returning
             }
@@ -87,8 +87,8 @@ class SpeakerWelcomedEvent(InterviewEvent):
             conversation_id=conversation_id,
             timestamp=timestamp,
             data={
-                "speaker_id": speaker_id,
-                "speaker_name": speaker_name
+                "person_id": speaker_id,
+                "person_name": speaker_name
             }
         )
 
@@ -103,7 +103,7 @@ class HostileBehaviorDetectedEvent(InterviewEvent):
             conversation_id=conversation_id,
             timestamp=timestamp,
             data={
-                "speaker_id": speaker_id,
+                "person_id": speaker_id,
                 "reasoning": reasoning,
                 "disposition": disposition
             }

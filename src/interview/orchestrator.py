@@ -11,7 +11,7 @@ from .models import Turn, InterviewResult
 from .schemas import InterviewState, PersonalityTraits, InterviewContext
 from .services import (
     AudioInterviewService, 
-    SpeakerIdentificationService, 
+    PersonIdentificationService, 
     TTSService, 
     ConversationManager
 )
@@ -25,7 +25,8 @@ from .events import (
 )
 # AudioCapture imported lazily to avoid dependency issues
 from ..infrastructure.llm import VertexRestClient
-from ..infrastructure.audio.voice_id import VoiceProfileManager, ProgressiveVoiceIdentifier
+from ..infrastructure.data import PersonManager
+from ..infrastructure.audio.voice_id import ProgressiveVoiceIdentifier
 from ..utils import setup_logging
 from ..config import (
     DEFAULT_VERTEX_LOCATION, DEFAULT_MODEL_NAME, DEFAULT_CHANNELS,
@@ -134,18 +135,19 @@ class InterviewOrchestrator:
             self.audio_service = None
         
         # Initialize voice services
-        voice_profile_manager = None
+        person_manager = None
         progressive_identifier = None
         
         if enable_voice_profiles:
-            voice_profile_manager = VoiceProfileManager(voice_profiles_dir)
+            person_manager = PersonManager(voice_profiles_dir)
+            # PersonManager now provides compatibility interface for ProgressiveVoiceIdentifier
             progressive_identifier = ProgressiveVoiceIdentifier(
-                voice_profile_manager,
+                person_manager,
                 aggressiveness=voice_aggressiveness
             )
         
-        self.speaker_service = SpeakerIdentificationService(
-            voice_profile_manager, 
+        self.person_service = PersonIdentificationService(
+            person_manager, 
             progressive_identifier
         )
         
@@ -208,7 +210,7 @@ class InterviewOrchestrator:
         print("=" * 50)
         
         # Start speaker identification
-        self.speaker_service.start_new_conversation()
+        self.person_service.start_new_conversation()
         
         try:
             # Main interview loop
@@ -306,7 +308,7 @@ class InterviewOrchestrator:
             )
             
             # Identify speaker
-            identification_result = self.speaker_service.identify_speaker_from_turn(turn, turn_idx)
+            identification_result = self.person_service.identify_person_from_turn(turn, turn_idx)
             
             # Handle speaker identification results
             self._handle_speaker_identification(identification_result, state)
@@ -324,29 +326,29 @@ class InterviewOrchestrator:
     def _handle_speaker_identification(self, identification_result: Dict[str, Any], 
                                      state: InterviewState):
         """Handle speaker identification results and events."""
-        speaker_id = identification_result.get("speaker_id")
+        person_id = identification_result.get("person_id")
         confidence = identification_result.get("confidence", 0.0)
         should_welcome = identification_result.get("should_welcome", False)
         should_terminate = identification_result.get("should_terminate", False)
         
         # Update state
-        if speaker_id:
-            state.update_speaker_identification(speaker_id, confidence)
+        if person_id:
+            state.update_speaker_identification(person_id, confidence)
             
             # Emit speaker identified event
             self.event_bus.emit(SpeakerIdentifiedEvent(
-                state.conversation_id or "unknown", time.time(), speaker_id,
+                state.conversation_id or "unknown", time.time(), person_id,
                 confidence, should_welcome
             ))
         
         # Handle welcoming
-        if should_welcome and not state.was_welcomed and speaker_id:
-            if self.speaker_service.welcome_returning_speaker(speaker_id, self.tts_service.use_tts):
+        if should_welcome and not state.was_welcomed and person_id:
+            if self.person_service.welcome_returning_person(person_id, self.tts_service.use_tts):
                 state.welcome_speaker()
                 
                 # Emit welcomed event
                 self.event_bus.emit(SpeakerWelcomedEvent(
-                    state.conversation_id or "unknown", time.time(), speaker_id, f"Speaker {speaker_id}"
+                    state.conversation_id or "unknown", time.time(), person_id, f"Speaker {person_id}"
                 ))
         
         # Handle termination
@@ -354,11 +356,11 @@ class InterviewOrchestrator:
             disposition = identification_result.get("disposition", "unknown")
             reasoning = identification_result.get("reasoning", "Hostile behavior detected")
             
-            state.set_termination(f"Hostile speaker detected: {speaker_id}")
+            state.set_termination(f"Hostile speaker detected: {person_id}")
             
             # Emit hostile behavior event
             self.event_bus.emit(HostileBehaviorDetectedEvent(
-                state.conversation_id or "unknown", time.time(), speaker_id or "unknown",
+                state.conversation_id or "unknown", time.time(), person_id or "unknown",
                 reasoning, disposition
             ))
             
@@ -406,7 +408,7 @@ class InterviewOrchestrator:
         if state.identified_speaker:
             # Generate custom termination message
             custom_termination = self.decision_engine.generate_hostile_termination_message(
-                state.identified_speaker, turns, self.speaker_service.voice_profile_manager
+                state.identified_speaker, turns, self.person_service.person_manager
             )
         else:
             custom_termination = "I need to end our conversation here. Take care."
@@ -429,7 +431,7 @@ class InterviewOrchestrator:
         """Build final interview result."""
         # Process speaker profile
         speaker_id, speaker_name, is_returning_speaker, final_speaker_confidence = (
-            self.speaker_service.process_final_speaker_profile(turns, state, final_payload)
+            self.person_service.process_final_speaker_profile(turns, state, final_payload)
         )
         
         # Speak final termination message (only if not already spoken)
