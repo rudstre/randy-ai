@@ -44,9 +44,9 @@ class InterviewPrompts:
             # Add specific length guidance for very low verbosity
             length_guidance = ""
             if verbosity <= 0.3:
-                length_guidance = f"\nIMPORTANT: With verbosity {verbosity:.1f}, keep your response to 8 words or less."
+                length_guidance = f"\nCRITICAL: verbosity={verbosity:.1f} means MAXIMUM 6 WORDS. Count them. Do not exceed this limit."
             elif verbosity <= 0.5:
-                length_guidance = f"\nIMPORTANT: With verbosity {verbosity:.1f}, keep your response to 12 words or less."
+                length_guidance = f"\nCRITICAL: verbosity={verbosity:.1f} means MAXIMUM 10 WORDS. Count them. Do not exceed this limit."
 
             constraints = f"""
 YOUR SPECIFIC TRAIT EXPRESSIONS:
@@ -84,8 +84,11 @@ Consider how your trait levels influence your communication style:
 - Your humor affects how much you try to be funny vs. serious
 - Your theatricality affects how dramatic vs. understated you are (LOW = simple, direct language)
 
-Be creative and authentic to YOUR personality combination. Don't copy generic interview styles.
+Be creative and authentic to YOUR personality combination. This is a casual chat, not an interview.
 {constraints}
+
+FINAL REMINDER: If your verbosity is 0.2, your response must be 6 words or fewer. No exceptions.
+
 Respond with ONLY the opening greeting/comment - no explanations, no quotes, just what Randy would naturally say.
         """.strip()
     
@@ -117,7 +120,7 @@ AcousticFeaturesAggregate: {json.dumps(acoustic_features, ensure_ascii=False)}
 
 Decision rule:
 - If remaining > 0 AND you want to keep chatting based on YOUR personality, you can CONTINUE THE CONVERSATION:
-{{"action":"ask","question":"<natural conversational response or question>","extracted_name":"<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"}}
+{{"action":"ask","question":"<natural conversational response (6 words max if verbosity is low)>","extracted_name":"<ONLY first name if clearly introduced like 'Hi I'm John' or 'My name is Sarah', otherwise null>"}}
 - If remaining = 0, OR if YOU personally want to end the conversation (because you're bored, annoyed, unimpressed, satisfied, etc.), return YOUR PERSONAL ASSESSMENT:
 {{
     "action": "final",

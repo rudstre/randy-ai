@@ -35,6 +35,9 @@ class InterviewDecisionEngine:
         """
         prompt = self.prompt_engine.build_decision_prompt(context)
         
+        # Debug log the decision prompt
+        logger.info(f"FULL DECISION PROMPT:\n{prompt}")
+        
         try:
             raw_response = self.llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
             logger.info(f"Raw LLM response: {raw_response}")
@@ -206,6 +209,9 @@ class PromptEngine:
                 
                 # Get prompt from prompts module
                 prompt = InterviewPrompts.opening_question_generation(personality_context, self.personality_traits)
+                
+                # Debug log the full prompt
+                logger.info(f"FULL OPENING QUESTION PROMPT:\n{prompt}")
                 
                 response = self._llm_client.generate_content(prompt, temperature=LLM_TEMPERATURE)
                 # Clean up the response
