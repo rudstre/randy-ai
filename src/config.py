@@ -132,11 +132,11 @@ class PersonalityConfig:
         """Create personality from preset."""
         presets = {
             "troll": cls(
-                chaos=0.9, randomness=0.9, weirdness=0.8, playfulness=0.8, 
+                chaos=0.9, randomness=0.5, weirdness=0.5, playfulness=0.8, 
                 snark=0.7, tolerance=0.2, empathy=0.2,
                 # Make troll chaotic and provocative but not too aggressive
-                humor=0.9, theatricality=0.7, curiosity=0.6, directness=0.6,
-                intensity=0.6, skepticism=0.5, intimidation=0.4, verbosity=0.7
+                humor=0.9, theatricality=0.7, curiosity=0.8, directness=0.3,
+                intensity=0.3, skepticism=0.9, intimidation=0.5, verbosity=0.2
             ),
             "detective": cls(
                 curiosity=0.9, skepticism=0.8, intensity=0.7, verbosity=0.8, 
@@ -190,10 +190,10 @@ class PersonalityConfig:
 
 # Personality presets (set to True to use a preset instead of custom values above)
 USE_PRESET_PERSONALITY = True
-PRESET_PERSONALITY = "detective"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
+PRESET_PERSONALITY = "troll"  # Options: troll, detective, therapist, comedian, chaos_agent, intimidator, philosopher
 
 # Overall temperature setting (0.0 = deterministic, 1.0 = very creative)
-LLM_TEMPERATURE = 0.4
+LLM_TEMPERATURE = 1.5
 
 # =============================================================================
 # INTERNAL CONSTANTS - Don't change these unless you know what you're doing
